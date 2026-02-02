@@ -1,0 +1,3573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Families</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Families">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23FF9A9E'/%3E%3Ccircle cx='30' cy='30' r='8' stroke='white' stroke-width='3' fill='none'/%3E%3Ccircle cx='70' cy='30' r='8' stroke='white' stroke-width='3' fill='none'/%3E%3Ccircle cx='50' cy='55' r='8' stroke='white' stroke-width='3' fill='none'/%3E%3Cpath d='M30 40C30 40 25 45 25 50C25 55 25 65 30 65' stroke='white' stroke-width='3' stroke-linecap='round' fill='none'/%3E%3Cpath d='M70 40C70 40 75 45 75 50C75 55 75 65 70 65' stroke='white' stroke-width='3' stroke-linecap='round' fill='none'/%3E%3Cpath d='M50 65C50 65 45 70 45 75C45 80 45 82 50 82' stroke='white' stroke-width='3' stroke-linecap='round' fill='none'/%3E%3Cpath d='M50 65C50 65 55 70 55 75C55 80 55 82 50 82' stroke='white' stroke-width='3' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='url(%23grad)'/%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23FF9A9E;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23FAD0C4;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='55' cy='50' r='12' stroke='white' stroke-width='4' fill='none'/%3E%3Ccircle cx='125' cy='50' r='12' stroke='white' stroke-width='4' fill='none'/%3E%3Ccircle cx='90' cy='95' r='12' stroke='white' stroke-width='4' fill='none'/%3E%3Cpath d='M55 65C55 65 45 75 45 85C45 95 45 115 55 115' stroke='white' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3Cpath d='M125 65C125 65 135 75 135 85C135 95 135 115 125 115' stroke='white' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3Cpath d='M90 110C90 110 80 120 80 130C80 140 80 145 90 145' stroke='white' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3Cpath d='M90 110C90 110 100 120 100 130C100 140 100 145 90 145' stroke='white' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: #ffffff;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Golden hour gradient orbs */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(255, 154, 158, 0.3) 0%, rgba(250, 208, 196, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -30%;
+            left: -15%;
+            width: 70%;
+            height: 70%;
+            background: radial-gradient(circle, rgba(142, 158, 255, 0.25) 0%, rgba(194, 233, 251, 0.15) 50%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Additional decorative orb */
+        .orb-accent {
+            position: fixed;
+            top: 40%;
+            left: 10%;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(circle, rgba(255, 183, 77, 0.15) 0%, rgba(255, 138, 101, 0.1) 40%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #root {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+
+        .app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+        .app-title {
+            color: #1a1a1a;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .add-button {
+            position: absolute;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 50%, #FAD0C4 100%);
+            border: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(255, 154, 158, 0.3);
+        }
+
+        .add-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 30px rgba(255, 154, 158, 0.4);
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .family-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .family-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+        }
+
+        .family-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 154, 158, 0.2);
+        }
+
+        .family-title {
+            color: #1a1a1a;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .word-preview {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .word-preview-item {
+            margin-bottom: 4px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .modal {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #1a1a1a;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #FF9A9E;
+            box-shadow: 0 0 0 3px rgba(255, 154, 158, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
+            color: white;
+        }
+
+        .button-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(255, 154, 158, 0.4);
+        }
+
+        .button-secondary {
+            background: rgba(0, 0, 0, 0.04);
+            color: #666;
+        }
+
+        .button-secondary:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .flashcard-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px 20px;
+            gap: 40px;
+        }
+
+        .flashcard-stack {
+            position: relative;
+            width: 420px;
+            height: 280px;
+        }
+
+        .flashcard {
+            position: absolute;
+            width: 420px;
+            height: 280px;
+            cursor: pointer;
+        }
+
+        /* The visible top card */
+        .flashcard.top {
+            z-index: 2;
+            transform: translateX(0) translateY(0);
+        }
+
+        /* The shadow card behind */
+        .flashcard.shadow {
+            z-index: 1;
+            transform: translateX(8px) translateY(8px);
+            pointer-events: none;
+        }
+
+        /* Next animation: slide right and fade out */
+        .flashcard.slide-out-right {
+            z-index: 3;
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(450px) translateY(0);
+                opacity: 0;
+            }
+        }
+
+        /* Next animation: new card slides in from left */
+        .flashcard.slide-in-left {
+            z-index: 2;
+            animation: slideInLeft 0.3s ease-out forwards;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-450px) translateY(0);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Back animation: slide left and fade out */
+        .flashcard.slide-out-left {
+            z-index: 3;
+            animation: slideOutLeft 0.3s ease-in forwards;
+        }
+
+        @keyframes slideOutLeft {
+            from {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(-450px) translateY(0);
+                opacity: 0;
+            }
+        }
+
+        /* Back animation: new card slides in from right */
+        .flashcard.slide-in-right {
+            z-index: 2;
+            animation: slideInRight 0.3s ease-out forwards;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(450px) translateY(0);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .flashcard-inner {
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            width: 100%;
+            height: 100%;
+        }
+
+        .flashcard-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            backface-visibility: hidden;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px 60px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-text {
+            font-weight: 600;
+            text-align: center;
+            color: #1a1a1a;
+            word-wrap: break-word;
+            max-width: 100%;
+            line-height: 1.3;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        /* Responsive font sizing based on text length */
+        .flashcard-text.size-small {
+            font-size: 42px;
+        }
+
+        .flashcard-text.size-medium {
+            font-size: 32px;
+        }
+
+        .flashcard-text.size-large {
+            font-size: 24px;
+        }
+
+        .flashcard-text.size-xlarge {
+            font-size: 20px;
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-around;
+            z-index: 50;
+        }
+
+        .nav-button {
+            background: none;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .nav-button.active {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
+            box-shadow: 0 4px 20px rgba(255, 154, 158, 0.3);
+        }
+
+        .nav-button:not(.active) {
+            opacity: 0.4;
+        }
+
+        .nav-button:hover {
+            transform: scale(1.05);
+        }
+
+        .flashcard-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .flashcard-nav-button {
+            padding: 16px 48px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #8E9EFF 0%, #C2E9FB 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(142, 158, 255, 0.3);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .flashcard-nav-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(142, 158, 255, 0.4);
+        }
+
+        .flashcard-nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .expanded-family {
+            width: 100%;
+            max-width: 500px;
+            max-height: 70vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+        .expanded-family-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 12px;
+        }
+
+        .expanded-family-title-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .expanded-family-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .expanded-family-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .family-action-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .family-action-button.edit-name {
+            background: rgba(142, 158, 255, 0.15);
+        }
+
+        .family-action-button.edit-name:hover {
+            background: rgba(142, 158, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        .family-action-button.delete-family {
+            background: rgba(255, 77, 77, 0.15);
+        }
+
+        .family-action-button.delete-family:hover {
+            background: rgba(255, 77, 77, 0.25);
+            transform: scale(1.05);
+        }
+
+        .family-action-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .edit-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(142, 158, 255, 0.15);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .edit-button:hover {
+            background: rgba(142, 158, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        .edit-button.active {
+            background: linear-gradient(135deg, #8E9EFF 0%, #C2E9FB 100%);
+        }
+
+        .edit-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .edit-button.active svg {
+            filter: brightness(0) invert(1);
+        }
+
+        .word-list-item {
+            padding: 16px;
+            background: rgba(255, 154, 158, 0.08);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 154, 158, 0.1);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .word-list-item.edit-mode {
+            padding-left: 56px;
+            padding-right: 120px;
+            animation: wobble 0.5s ease-in-out;
+        }
+
+        @keyframes wobble {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-2deg); }
+            75% { transform: rotate(2deg); }
+        }
+
+        .word-list-item.edit-mode:hover {
+            transform: scale(1.02);
+        }
+
+        .word-action-buttons {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .word-list-item.edit-mode .word-action-buttons {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .word-family-button {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(142, 158, 255, 0.15);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .word-list-item.edit-mode .word-family-button {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .word-family-button:hover {
+            background: rgba(142, 158, 255, 0.3);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .action-button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .action-button.edit {
+            background: rgba(142, 158, 255, 0.15);
+        }
+
+        .action-button.edit:hover {
+            background: rgba(142, 158, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .action-button.delete {
+            background: rgba(255, 77, 77, 0.15);
+        }
+
+        .action-button.delete:hover {
+            background: rgba(255, 77, 77, 0.3);
+            transform: scale(1.1);
+        }
+
+        .action-button svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .family-selector-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .family-selector-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            min-width: 300px;
+            max-width: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .family-selector-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .family-selector-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .family-selector-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.05);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .family-selector-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: scale(1.1);
+        }
+
+        .family-selector-close svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .family-option {
+            padding: 14px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 6px;
+            font-size: 16px;
+        }
+
+        .family-option:hover {
+            background: rgba(142, 158, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        .family-option.create-new {
+            background: linear-gradient(135deg, #8E9EFF 0%, #C2E9FB 100%);
+            color: white;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .family-option.create-new:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(142, 158, 255, 0.3);
+        }
+
+        .word-german {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .word-english {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+        }
+
+        /* Navigation Icons */
+        .nav-icon {
+            width: 26px;
+            height: 26px;
+        }
+
+        .nav-button.active .nav-icon {
+            filter: brightness(0) invert(1);
+        }
+
+        .nav-button:not(.active) .nav-icon {
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // SVG Icons as React components
+        const FamiliesIcon = () => (
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="7" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                <circle cx="17" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                <circle cx="12" cy="13" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                <path d="M7 9.5C7 9.5 5 11 5 13C5 15 5 18 7 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M17 9.5C17 9.5 19 11 19 13C19 15 19 18 17 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M12 16C12 16 10 17.5 10 19C10 20.5 10 21 12 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M12 16C12 16 14 17.5 14 19C14 20.5 14 21 12 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+        );
+
+        const FlashcardsIcon = () => (
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="8" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                <path d="M7 11H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M7 14H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M6 8L7 6C7.5 5 8 4 9 4H15C16 4 16.5 5 17 6L18 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+        );
+
+        const PencilIcon = () => (
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+        );
+
+        const DeleteIcon = () => (
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+        );
+
+        // Simple word family classifier
+        const classifyWord = (germanWord, englishWord) => {
+            const word = germanWord.toLowerCase();
+            const translation = englishWord.toLowerCase();
+            
+            // Animals
+            if (/hund|katze|vogel|fisch|pferd|maus|tier|kuh|schwein|schaf|huhn|ente|fuchs|bär|wolf|hase|reh|elefant|löwe|tiger|affe|schlange|frosch|insekt|biene|schmetterling/.test(word) ||
+                /dog|cat|bird|fish|horse|mouse|animal|cow|pig|sheep|chicken|duck|fox|bear|wolf|rabbit|deer|elephant|lion|tiger|monkey|snake|frog|insect|bee|butterfly/.test(translation)) {
+                return 'Animals';
+            }
+            
+            // Food & Drink
+            if (/brot|käse|milch|wasser|wein|bier|kaffee|tee|fleisch|fisch|gemüse|obst|apfel|birne|orange|banane|salat|suppe|kuchen|essen|trinken|restaurant|küche/.test(word) ||
+                /bread|cheese|milk|water|wine|beer|coffee|tea|meat|fish|vegetable|fruit|apple|pear|orange|banana|salad|soup|cake|eat|drink|food|restaurant|kitchen/.test(translation)) {
+                return 'Food & Drink';
+            }
+            
+            // Emotions & Feelings
+            if (/glück|freude|trauer|angst|liebe|hass|wut|furcht|hoffnung|gefühl|emotion|herz|seele|glücklich|traurig|froh|böse/.test(word) ||
+                /happy|happiness|sad|sadness|fear|love|hate|anger|hope|feeling|emotion|heart|soul|joyful|afraid|angry/.test(translation)) {
+                return 'Emotions';
+            }
+            
+            // Travel & Places
+            if (/reise|stadt|land|berg|meer|fluss|strand|hotel|flug|zug|auto|straße|weg|platz|ort|welt|himmel|erde/.test(word) ||
+                /travel|city|country|mountain|sea|ocean|river|beach|hotel|flight|train|car|street|road|place|world|sky|earth/.test(translation)) {
+                return 'Travel & Places';
+            }
+            
+            // Time & Weather
+            if (/zeit|tag|nacht|morgen|abend|woche|monat|jahr|uhr|stunde|minute|wetter|sonne|regen|schnee|wind|wolke|warm|kalt/.test(word) ||
+                /time|day|night|morning|evening|week|month|year|clock|hour|minute|weather|sun|rain|snow|wind|cloud|warm|cold/.test(translation)) {
+                return 'Time & Weather';
+            }
+            
+            // Body & Health
+            if (/körper|kopf|hand|fuß|auge|ohr|nase|mund|arm|bein|herz|gesundheit|arzt|kranken|schmerz|krank|gesund/.test(word) ||
+                /body|head|hand|foot|eye|ear|nose|mouth|arm|leg|heart|health|doctor|hospital|pain|sick|healthy/.test(translation)) {
+                return 'Body & Health';
+            }
+            
+            // Colors & Appearance
+            if (/farbe|rot|blau|grün|gelb|schwarz|weiß|braun|grau|rosa|orange|lila|schön|hässlich|groß|klein|lang|kurz/.test(word) ||
+                /color|red|blue|green|yellow|black|white|brown|gray|grey|pink|orange|purple|beautiful|ugly|big|small|long|short/.test(translation)) {
+                return 'Colors & Appearance';
+            }
+            
+            // Numbers & Quantities
+            if (/zahl|eins|zwei|drei|vier|fünf|viel|wenig|mehr|weniger|alle|einige|manche/.test(word) ||
+                /number|one|two|three|four|five|many|few|more|less|all|some/.test(translation)) {
+                return 'Numbers & Quantities';
+            }
+            
+            // People & Relationships
+            if (/mensch|mann|frau|kind|baby|mutter|vater|bruder|schwester|freund|familie|leute|person/.test(word) ||
+                /person|people|man|woman|child|baby|mother|father|brother|sister|friend|family/.test(translation)) {
+                return 'People & Family';
+            }
+            
+            // Actions & Verbs
+            if (/gehen|kommen|machen|tun|sagen|sprechen|hören|sehen|denken|wissen|können|müssen|wollen|haben|sein|werden/.test(word) ||
+                /go|come|make|do|say|speak|hear|see|think|know|can|must|want|have|be|become/.test(translation)) {
+                return 'Actions';
+            }
+            
+            // Default category
+            return 'General';
+        };
+
+        function App() {
+            const [view, setView] = useState('families'); // 'families' or 'flashcards'
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [germanWord, setGermanWord] = useState('');
+            const [englishWord, setEnglishWord] = useState('');
+            const [words, setWords] = useState([]);
+            const [expandedFamily, setExpandedFamily] = useState(null);
+            const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
+            const [isFlipped, setIsFlipped] = useState(false);
+            const [isAnimating, setIsAnimating] = useState(false);
+            const [animationClass, setAnimationClass] = useState('');
+            const [shuffledWords, setShuffledWords] = useState([]);
+
+            // Shuffle array helper
+            const shuffleArray = (array) => {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            };
+
+            // Shuffle words when entering flashcard view or when words change
+            useEffect(() => {
+                if (view === 'flashcards' && words.length > 0) {
+                    setShuffledWords(shuffleArray(words));
+                    setCurrentFlashcardIndex(0);
+                    setIsFlipped(false);
+                }
+            }, [view, words]);
+            const [isEditMode, setIsEditMode] = useState(false);
+            const [editingWord, setEditingWord] = useState(null);
+            const [showFamilySelector, setShowFamilySelector] = useState(null);
+            const [showEditWordModal, setShowEditWordModal] = useState(false);
+            const [editWordGerman, setEditWordGerman] = useState('');
+            const [editWordEnglish, setEditWordEnglish] = useState('');
+            const [showEditFamilyModal, setShowEditFamilyModal] = useState(false);
+            const [editFamilyName, setEditFamilyName] = useState('');
+
+            // Helper function to determine font size based on text length
+            const getFontSizeClass = (text) => {
+                if (!text) return 'size-medium';
+                const length = text.length;
+                if (length <= 15) return 'size-small';
+                if (length <= 25) return 'size-medium';
+                if (length <= 40) return 'size-large';
+                return 'size-xlarge';
+            };
+
+
+            // Pre-load vocabulary from Google Doc
+            const preLoadedWords = [
+  {
+    "id": 1000,
+    "german": "zugegen sein",
+    "english": "estar presente",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1001,
+    "german": "das Schloss",
+    "english": "die Schlösser",
+    "family": "Buildings & Places",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1002,
+    "german": "der Palast",
+    "english": "die Paläste",
+    "family": "Buildings & Places",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1003,
+    "german": "eine prunkvolle Villa (",
+    "english": "una mansión ostentosa)",
+    "family": "Buildings & Places",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1004,
+    "german": "Die Tugend",
+    "english": "La virtud",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1005,
+    "german": "gewissenhafter Arbeiter",
+    "english": "trabajador a conciencia",
+    "family": "Work & Professions",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1006,
+    "german": "die Schulden",
+    "english": "deuda",
+    "family": "Money & Business",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1007,
+    "german": "tilgen",
+    "english": "saldar una deuda",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1008,
+    "german": "wiewohl",
+    "english": "obwohl pero más cheto",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1009,
+    "german": "nicht auf längere Frist",
+    "english": "no a largo plazo",
+    "family": "Time & Frequency",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1010,
+    "german": "unerträglich",
+    "english": "insoportable",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1011,
+    "german": "ekelerregend",
+    "english": "que despierta asco",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1012,
+    "german": "ekelhaft",
+    "english": "asqueroso",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1013,
+    "german": "Das ist Geschmacksache",
+    "english": "es cuestión de gustos",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1014,
+    "german": "Unterhaltsam",
+    "english": "entretenido",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1015,
+    "german": "sich unterhalten",
+    "english": "conversar / divertirse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1016,
+    "german": "unvermeidlich",
+    "english": "inevitable",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1017,
+    "german": "zufälligerweise",
+    "english": "por casualidad",
+    "family": "Time & Frequency",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1018,
+    "german": "der Zufall",
+    "english": "la casualidad",
+    "family": "Time & Frequency",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1019,
+    "german": "faulenze",
+    "english": "haraganear (vaguear ?)",
+    "family": "Body & Health",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1020,
+    "german": "ein Faultier",
+    "english": "perezoso",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1021,
+    "german": "bequem",
+    "english": "cómodo",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1022,
+    "german": "besorgniserregend",
+    "english": "preocupante",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1023,
+    "german": "der Rechtsanwalt",
+    "english": "El abogado",
+    "family": "Work & Professions",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1024,
+    "german": "Jura",
+    "english": "la carrera de abogacía",
+    "family": "Work & Professions",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1025,
+    "german": "der Botschafter",
+    "english": "embajador",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1026,
+    "german": "die Botschaft",
+    "english": "la embajada",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1027,
+    "german": "das ist verpönt",
+    "english": "está mal visto",
+    "family": "Law & Rules",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1028,
+    "german": "zuverlässig",
+    "english": "confiable",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1029,
+    "german": "überzeugend sein",
+    "english": "ser convincente",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1030,
+    "german": "im Freien arbeiten",
+    "english": "al aire libre",
+    "family": "Work & Professions",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1031,
+    "german": "feste",
+    "english": "estricto",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1032,
+    "german": "befristeten",
+    "english": "limitado en el tiempo",
+    "family": "Time & Frequency",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1033,
+    "german": "die Wirbelsaüle",
+    "english": "la coluna vertebral",
+    "family": "Body & Health",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1034,
+    "german": "der Fluggesellschaft",
+    "english": "aerolinea",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1035,
+    "german": "bisher",
+    "english": "hasta ahora",
+    "family": "Time & Frequency",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1036,
+    "german": "der Verhandlungstisch",
+    "english": "mesa de negociaciones",
+    "family": "Body & Health",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1037,
+    "german": "auswendig learnen",
+    "english": "aprender de memoria",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1038,
+    "german": "davon ausgehen",
+    "english": "partir de la base",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1039,
+    "german": "Gerichtsurteilen",
+    "english": "sentencias judiciales",
+    "family": "Law & Rules",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1040,
+    "german": "Pleite gehen",
+    "english": "fundirse",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1041,
+    "german": "untersagt",
+    "english": "prohibido",
+    "family": "Law & Rules",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1042,
+    "german": "stibitzen",
+    "english": "robar",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1043,
+    "german": "Ich dachte es mir",
+    "english": "ya me lo suponía",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1044,
+    "german": "in Anspruch nehmen",
+    "english": "exige/van a ser necesarios",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1045,
+    "german": "Konjuktive II",
+    "english": "plantea hipotesis",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1046,
+    "german": "anmachen > prender",
+    "english": "einschalten",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1047,
+    "german": "ausmachen",
+    "english": "apagar",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1048,
+    "german": "ausschalten",
+    "english": "apagar",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1049,
+    "german": "fach bleiben",
+    "english": "mantenerse despierto",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1050,
+    "german": "unterzeichnen",
+    "english": "firmar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1051,
+    "german": "bei einer Veranstaltung",
+    "english": "un recital",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1052,
+    "german": "im algemeinen",
+    "english": "en general",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1053,
+    "german": "eine Metzgerei",
+    "english": "carnicería",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1054,
+    "german": "sich anziehen",
+    "english": "vestirse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1055,
+    "german": "sich ausziehen",
+    "english": "desvestirse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1056,
+    "german": "sich umziehen",
+    "english": "cambiarse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1057,
+    "german": "Lohnt es sich?",
+    "english": "Vale la pena?",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1058,
+    "german": "Verwaltung",
+    "english": "administración",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1059,
+    "german": "erarbeiten",
+    "english": "elaborar",
+    "family": "Work & Professions",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1060,
+    "german": "Gesellschaft mit beschränkter Haftung",
+    "english": "GmbH",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1061,
+    "german": "befristete",
+    "english": "limitado",
+    "family": "Time & Frequency",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1062,
+    "german": "die Frist",
+    "english": "el plazo",
+    "family": "Time & Frequency",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1063,
+    "german": "Kaufmannsberuf",
+    "english": "gente de venta",
+    "family": "Work & Professions",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1064,
+    "german": "sich bewerben",
+    "english": "postularse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1065,
+    "german": ".aussagekräftige",
+    "english": "representativo/a",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1066,
+    "german": "sorgfältig",
+    "english": "prolijamente",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1067,
+    "german": "Lesbarkeit",
+    "english": "legibilidad",
+    "family": "Body & Health",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1068,
+    "german": "Rechtschreibung",
+    "english": "ortografía",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1069,
+    "german": "Prägnanz",
+    "english": "concisión del contenido",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1070,
+    "german": "widmen",
+    "english": "dedicarle",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1071,
+    "german": "Ich bin in Eile",
+    "english": "estoy apurado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1072,
+    "german": "sich benehmen",
+    "english": "portarse",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1073,
+    "german": "ein Wutanfall",
+    "english": "ataque de rabia",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1074,
+    "german": "fragen",
+    "english": "preguntar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1075,
+    "german": "nach etwas fragen",
+    "english": "estar en busca de algo",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1076,
+    "german": "um nicht einzuschlafen",
+    "english": "para no dormirME",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1077,
+    "german": "möchtest du -",
+    "english": "es siempre Konjunktiv",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1078,
+    "german": "wiedersprechen",
+    "english": "contradecir",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1079,
+    "german": "jemals",
+    "english": "alguna vez en la vida",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1080,
+    "german": "Gestatten Sie",
+    "english": "Permitame",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1081,
+    "german": "Die Firma hat abgewirtschaftet",
+    "english": "La empresa se vino abajo",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1082,
+    "german": "Verhören",
+    "english": "indagar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1083,
+    "german": "Ansehen",
+    "english": "prestigio",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1084,
+    "german": "sich verkleiden",
+    "english": "disfrazarse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1085,
+    "german": "verweigern",
+    "english": "negar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1086,
+    "german": "skurril",
+    "english": "excéntrico",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1087,
+    "german": "der Dichter",
+    "english": "poeta",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1088,
+    "german": "Die Geister",
+    "english": "los espíritus",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1089,
+    "german": "überkandidelt",
+    "english": "acelerado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1090,
+    "german": "der Urteil",
+    "english": "Juicio",
+    "family": "Law & Rules",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1091,
+    "german": "der Vorurteil",
+    "english": "prejuicio",
+    "family": "Law & Rules",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1092,
+    "german": "beurteilen",
+    "english": "juzgar",
+    "family": "Law & Rules",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1093,
+    "german": "stattfinden: encontrar (se encuentra)",
+    "english": "es un verbo separable",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1094,
+    "german": "willkürlich",
+    "english": "arbitrario",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1095,
+    "german": "auf der einen Seite",
+    "english": "por un lado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1096,
+    "german": "auf der anderen Seite",
+    "english": "por el otro",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1097,
+    "german": "schreiben",
+    "english": "wir schrieben",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1098,
+    "german": "machen",
+    "english": "wir machten",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1099,
+    "german": "lesen",
+    "english": "wir lasen",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1100,
+    "german": "bringen",
+    "english": "wir brachten",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1101,
+    "german": "sterben",
+    "english": "ich starb",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1102,
+    "german": "kommen",
+    "english": "ich kam",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1103,
+    "german": "gehen",
+    "english": "ich ging",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1104,
+    "german": "essen",
+    "english": "ich aß",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1105,
+    "german": "trinken",
+    "english": "ich trank",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1106,
+    "german": "fliegen",
+    "english": "ich flog",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1107,
+    "german": "bleiben",
+    "english": "wir blieben",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1108,
+    "german": "steigen",
+    "english": "wir stiegen",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1109,
+    "german": "rennen",
+    "english": "wir rannten (otra excepción)",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1110,
+    "german": "kaufen",
+    "english": "wir kauften",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1111,
+    "german": "verkaufen",
+    "english": "wir verkauften",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1112,
+    "german": "fahren",
+    "english": "wir fuhren",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1113,
+    "german": "verbringen",
+    "english": "wir verbrachten",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1114,
+    "german": "ankommen",
+    "english": "wir kammen …. an",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1115,
+    "german": "umsteigen",
+    "english": "wir stiegen … um",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1116,
+    "german": "sehen",
+    "english": "wir sahen",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1117,
+    "german": "schauen",
+    "english": "wir schauten",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1118,
+    "german": "tragen",
+    "english": "wir trugen",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1119,
+    "german": "stehen",
+    "english": "ich stand",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1120,
+    "german": "ihr seid miteinbeschlossen",
+    "english": "ustedes estan incluidos",
+    "family": "Buildings & Places",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1121,
+    "german": "Muße",
+    "english": "ocio",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1122,
+    "german": "das Weltgeschehen",
+    "english": "los acontecimientos del mundo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1123,
+    "german": "viene del verbo geschehen",
+    "english": "acontecer",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1124,
+    "german": "Ej: Was ist geschehen?",
+    "english": "qué ha sucedido?",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1125,
+    "german": "Prominenten",
+    "english": "personas relevantes",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1126,
+    "german": "Beeil dich",
+    "english": "Beeil dich",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1127,
+    "german": "sich Sorgen machen",
+    "english": "preocuparse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1128,
+    "german": "sorglos",
+    "english": "sin preocupación",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1129,
+    "german": "günden",
+    "english": "fundar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1130,
+    "german": "begründen",
+    "english": "argumentar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1131,
+    "german": "überfall",
+    "english": "ataque/asalto",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1132,
+    "german": "heimlich",
+    "english": "en secreto",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1133,
+    "german": "anziehen",
+    "english": "vestir o atraer",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1134,
+    "german": "sich vollziehen",
+    "english": "se llevaron a cabo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1135,
+    "german": "Er widerspricht sich ständig",
+    "english": "El se contradice continuamente",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1136,
+    "german": "überbieten",
+    "english": "hacer una oferta mayor",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1137,
+    "german": "überschätzen",
+    "english": "sobreestimar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1138,
+    "german": "shätzen",
+    "english": "estimar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1139,
+    "german": "unterschätzen",
+    "english": "subestimar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1140,
+    "german": "Was fällt dir auch?",
+    "english": "que se te ocurre?",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1141,
+    "german": "es ist nicht wahr",
+    "english": "no es verdad",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1142,
+    "german": "es ist eine Lüge",
+    "english": "es mentira",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1143,
+    "german": "darstellen",
+    "english": "representar (separable)",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1144,
+    "german": "maßnahmen treffen",
+    "english": "tomar medidas",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1145,
+    "german": "Heimatliebe",
+    "english": "Patriotismo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1146,
+    "german": "Bezugswort",
+    "english": "antecedente",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1147,
+    "german": "gründlich",
+    "english": "a fondo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1148,
+    "german": "schonen",
+    "english": "preservar/cuidar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1149,
+    "german": "anpassen",
+    "english": "adaptar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1150,
+    "german": "anpassungsfähig",
+    "english": "adaptable",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1151,
+    "german": "Fachkräfte",
+    "english": "especialista",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1152,
+    "german": "Herausforderungen",
+    "english": "desafios",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1153,
+    "german": "ferien beantragen",
+    "english": "pedirse vacaciones",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1154,
+    "german": "urlaubs antrag",
+    "english": "pedido de vacaciones",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1155,
+    "german": "abwertend",
+    "english": "despectivo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1156,
+    "german": "übertreibungen",
+    "english": "exageración",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1157,
+    "german": "elektrogeräte",
+    "english": "electrodomesticos",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1158,
+    "german": "kunststoff",
+    "english": "plastic > plastico",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1159,
+    "german": "das Gleichgewicht verlieren",
+    "english": "perder el equilibrio",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1160,
+    "german": "bewahren",
+    "english": "conservar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1161,
+    "german": "Ermäßigung",
+    "english": "descuento",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1162,
+    "german": "Höchstgeschwindigkeit",
+    "english": "velocidad maxima",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1163,
+    "german": "angreifen",
+    "english": "atacar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1164,
+    "german": "der Angriff",
+    "english": "el ataque",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1165,
+    "german": "der Angreifer",
+    "english": "el ataque",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1166,
+    "german": "man muss sich verteidigen",
+    "english": "uno debe defenderse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1167,
+    "german": "zieht viele Aspekte",
+    "english": "muestra varios aspectos",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1168,
+    "german": "übertrieben",
+    "english": "exagerado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1169,
+    "german": "übertreiben",
+    "english": "exagerar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1170,
+    "german": "Metzgerei",
+    "english": "carniceria",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1171,
+    "german": "faul werden (para comida)",
+    "english": "podrirse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1172,
+    "german": "beibehalten",
+    "english": "conservar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1173,
+    "german": "ich bedauere es",
+    "english": "es tut mir leid",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1174,
+    "german": "Überzeugungskraft",
+    "english": "persuasión/poder de convicción",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1175,
+    "german": "jemanden überreden",
+    "english": "persuadir",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1176,
+    "german": "jemanden von etwas abbringen",
+    "english": "disuadir",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1177,
+    "german": "lästigen",
+    "english": "molestos",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1178,
+    "german": "die last",
+    "english": "la carga",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1179,
+    "german": "zwingen",
+    "english": "obligar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1180,
+    "german": "zur Strecke bringen",
+    "english": "destruir",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1181,
+    "german": "abstürzen",
+    "english": "caerse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1182,
+    "german": "trist",
+    "english": "triste bastante figurado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1183,
+    "german": "schwitzen",
+    "english": "transpirar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1184,
+    "german": "neueste",
+    "english": "neuste",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1185,
+    "german": "Herdplatte",
+    "english": "hornalla",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1186,
+    "german": "ehrlich",
+    "english": "honesto",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1187,
+    "german": "zur Hand gehen",
+    "english": "dar una mano",
+    "family": "Body & Health",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1188,
+    "german": "fast nur",
+    "english": "prácticamente solo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1189,
+    "german": "es geht um",
+    "english": "se trata de",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1190,
+    "german": "zutagetreten",
+    "english": "se hace más claro",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1191,
+    "german": "treten",
+    "english": "pisar / entrar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1192,
+    "german": "sizten",
+    "english": "habe gessessen.",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1193,
+    "german": "ermüdend",
+    "english": "cansador",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1194,
+    "german": "ocupado",
+    "english": "beaschäftigt",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1195,
+    "german": "Meiner Erfahrung nach",
+    "english": "en mi experience",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1196,
+    "german": "sich bewegen",
+    "english": "moverse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1197,
+    "german": "sich fortbewegen",
+    "english": "moverse hacia adelante",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1198,
+    "german": "dicht",
+    "english": "muy pegado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1199,
+    "german": "winseln",
+    "english": "gemir",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1200,
+    "german": "hektisch",
+    "english": "movido",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1201,
+    "german": "sehr vernünftig",
+    "english": "muy razonable",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1202,
+    "german": "der Eimer",
+    "english": "balde",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1203,
+    "german": "Geist",
+    "english": "mente o espíritu",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1204,
+    "german": "Gehirn",
+    "english": "cerebro",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1205,
+    "german": "Fazit",
+    "english": "conclusión",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1206,
+    "german": "erschwinglich",
+    "english": "accesible",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1207,
+    "german": "es lohnt sich",
+    "english": "vale la pena",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1208,
+    "german": "der Fortschritt",
+    "english": "progreso",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1209,
+    "german": "lernen",
+    "english": "aprender",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1210,
+    "german": "erlernen",
+    "english": "acabar el proceso de aprendizaje",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1211,
+    "german": "die Bewertung von Leistung",
+    "english": "la calificacion del rendimiento",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1212,
+    "german": "Ein ganz normaler Vorgang",
+    "english": "un proceso completamente normal",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1213,
+    "german": "gerechtfertigt",
+    "english": "justificado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1214,
+    "german": "gerecht",
+    "english": "justo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1215,
+    "german": "ewig",
+    "english": "eternamente",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1216,
+    "german": "die ewigkeit",
+    "english": "la eternidad",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1217,
+    "german": "Ziele erreichen",
+    "english": "alcanzar objetivos.",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1218,
+    "german": "sich beeilen",
+    "english": "apurarse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1219,
+    "german": "Vitaminmangel",
+    "english": "deficiencia de vitaminas",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1220,
+    "german": "man fühlt sich schwach",
+    "english": "sentirse débil",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1221,
+    "german": "zunehmen",
+    "english": "engordar",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1222,
+    "german": "abnehmen",
+    "english": "bajar de peso",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1223,
+    "german": "Börsenotierung",
+    "english": "valores de la bolsa",
+    "family": "Animals",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1224,
+    "german": "in Verzweiflung geraten",
+    "english": "caer en la desesperación",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1225,
+    "german": "ich bin verzweifelt",
+    "english": "estoy desesperado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1226,
+    "german": "einreihen",
+    "english": "presentar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1227,
+    "german": "Sie hatte sich verfahren.",
+    "english": "le erro al camino",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1228,
+    "german": "verzweifelt",
+    "english": "desesperado/a",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1229,
+    "german": "beruhigend",
+    "english": "tranquilizante",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1230,
+    "german": "beunruhigend",
+    "english": "no tranquilizante",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1231,
+    "german": "fremd",
+    "english": "extraño",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1232,
+    "german": "streng",
+    "english": "severo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1233,
+    "german": "zuverlassig",
+    "english": "confiable",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1234,
+    "german": "unzuverlassig",
+    "english": "no confiable",
+    "family": "Emotions & Qualities",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1235,
+    "german": "die Gangschaltung",
+    "english": "los cambios (del auto)",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1236,
+    "german": "Das Ziel",
+    "english": "El objetivo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1237,
+    "german": "Hochladen",
+    "english": "cargar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1238,
+    "german": "bestehen",
+    "english": "aprobar (un examen)",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1239,
+    "german": "die Versicherung",
+    "english": "el seguro",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1240,
+    "german": "das Benzin",
+    "english": "la nafta",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1241,
+    "german": "zumindest",
+    "english": "al menos",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1242,
+    "german": "mindestens",
+    "english": "como menos",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1243,
+    "german": "auf längere Frist",
+    "english": "en plazo mas largo",
+    "family": "Time & Frequency",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1244,
+    "german": "Stahl",
+    "english": "acero",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1245,
+    "german": "die Rettung",
+    "english": "la salvacion",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1246,
+    "german": "getrettet",
+    "english": "salvados",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1247,
+    "german": "zwischenlandung",
+    "english": "conexión",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1248,
+    "german": "Mategefäß",
+    "english": "el mate",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1249,
+    "german": "Kammerjäger",
+    "english": "fumigador",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1250,
+    "german": "hinaus schwappen",
+    "english": "rebalsar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1251,
+    "german": "Der Fallschrimjäger",
+    "english": "el paracaidista",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1252,
+    "german": "verfahren",
+    "english": "perderse de ruta",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1253,
+    "german": "vertrocknen",
+    "english": "secarse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1254,
+    "german": "verheilen",
+    "english": "curarse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1255,
+    "german": "verfaulen",
+    "english": "podrirse (frutas)\\",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1256,
+    "german": "verdursten",
+    "english": "morir de sed",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1257,
+    "german": "ersticken",
+    "english": "asfixiarse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1258,
+    "german": "kränkeln",
+    "english": "ser enfermizo",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1259,
+    "german": "ernsthaft",
+    "english": "seriamente",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1260,
+    "german": "enstehen",
+    "english": "tuvieron lugar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1261,
+    "german": "Sachschaden",
+    "english": "daños materiales",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1262,
+    "german": "eine krankheit erlegen",
+    "english": "sucumbir ante una enfermedad",
+    "family": "Body & Health",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1263,
+    "german": "sumpfgebiet",
+    "english": "pantano",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1264,
+    "german": "sumpf",
+    "english": "humedo, mucha agua",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1265,
+    "german": "karst",
+    "english": "un tipo de paisaje",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1266,
+    "german": "Schimmel",
+    "english": "moho",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1267,
+    "german": "das Gehöft",
+    "english": "la granja",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1268,
+    "german": "beißen",
+    "english": "morder",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1269,
+    "german": "stechen",
+    "english": "picar",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1270,
+    "german": "Rechtfertigen",
+    "english": "justificarse",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1271,
+    "german": "Vollkasko",
+    "english": "seguro todo riesgo",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1272,
+    "german": "Fußballendspiel",
+    "english": "el partido final",
+    "family": "Body & Health",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1273,
+    "german": "Angeber",
+    "english": "alguien agrandado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1274,
+    "german": "die Lage",
+    "english": "la ubicación",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1275,
+    "german": "schiefgehen",
+    "english": "todo salió mal",
+    "family": "Actions & Verbs",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1276,
+    "german": "Wir waren zu fünft",
+    "english": "Eramos 5",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1277,
+    "german": "beschäftigt",
+    "english": "ocupado",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1278,
+    "german": "Naturbelassen",
+    "english": "dejada a la naturaleza",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1279,
+    "german": "in Wirklichkeit",
+    "english": "en realidad",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  },
+  {
+    "id": 1280,
+    "german": "Kies",
+    "english": "ripio",
+    "family": "General",
+    "dateAdded": "2025-01-31T12:00:00.000Z"
+  }
+];
+            
+            // Load words from localStorage on mount
+            useEffect(() => {
+                const saved = localStorage.getItem('germanVocab');
+                const version = localStorage.getItem('germanVocabVersion');
+                
+                // If version is not 1.0, load pre-loaded words
+                if (version !== '1.0') {
+                    setWords(preLoadedWords);
+                    localStorage.setItem('germanVocab', JSON.stringify(preLoadedWords));
+                    localStorage.setItem('germanVocabVersion', '1.0');
+                } else if (saved) {
+                    setWords(JSON.parse(saved));
+                }
+            }, []);
+
+
+            // Save words to localStorage whenever they change
+            useEffect(() => {
+                localStorage.setItem('germanVocab', JSON.stringify(words));
+            }, [words]);
+
+            const handleAddWord = () => {
+                if (!germanWord.trim() || !englishWord.trim()) return;
+
+                const family = classifyWord(germanWord, englishWord);
+                const newWord = {
+                    id: Date.now(),
+                    german: germanWord.trim(),
+                    english: englishWord.trim(),
+                    family: family,
+                    dateAdded: new Date().toISOString()
+                };
+
+                setWords([...words, newWord]);
+                setGermanWord('');
+                setEnglishWord('');
+                setShowAddModal(false);
+            };
+
+            const getFamilies = () => {
+                const familyMap = {};
+                words.forEach(word => {
+                    if (!familyMap[word.family]) {
+                        familyMap[word.family] = [];
+                    }
+                    familyMap[word.family].push(word);
+                });
+                return familyMap;
+            };
+
+            const families = getFamilies();
+            const familyNames = Object.keys(families);
+
+            const handleNextFlashcard = () => {
+                if (isAnimating) return;
+                setIsAnimating(true);
+                setIsFlipped(false);
+                setAnimationClass('next');
+                
+                setTimeout(() => {
+                    setCurrentFlashcardIndex((prev) => (prev + 1) % shuffledWords.length);
+                    setAnimationClass('');
+                    setIsAnimating(false);
+                }, 300);
+            };
+
+            const handlePrevFlashcard = () => {
+                if (isAnimating) return;
+                setIsAnimating(true);
+                setIsFlipped(false);
+                setAnimationClass('prev');
+                
+                setTimeout(() => {
+                    setCurrentFlashcardIndex((prev) => (prev - 1 + shuffledWords.length) % shuffledWords.length);
+                    setAnimationClass('');
+                    setIsAnimating(false);
+                }, 300);
+            };
+
+            const handleDeleteWord = (wordId) => {
+                setWords(words.filter(w => w.id !== wordId));
+            };
+
+            const handleEditWord = (word) => {
+                setEditingWord(word);
+                setEditWordGerman(word.german);
+                setEditWordEnglish(word.english);
+                setShowEditWordModal(true);
+            };
+
+            const handleSaveEditWord = () => {
+                if (!editWordGerman.trim() || !editWordEnglish.trim()) return;
+                
+                setWords(words.map(w => 
+                    w.id === editingWord.id 
+                        ? { ...w, german: editWordGerman.trim(), english: editWordEnglish.trim() }
+                        : w
+                ));
+                
+                setShowEditWordModal(false);
+                setEditingWord(null);
+                setEditWordGerman('');
+                setEditWordEnglish('');
+            };
+
+            const handleMoveToFamily = (wordId, newFamily) => {
+                setWords(words.map(w => 
+                    w.id === wordId 
+                        ? { ...w, family: newFamily }
+                        : w
+                ));
+                setShowFamilySelector(null);
+            };
+
+            const handleCreateNewFamily = (wordId) => {
+                const familyName = prompt('Enter new family name:');
+                if (familyName && familyName.trim()) {
+                    handleMoveToFamily(wordId, familyName.trim());
+                }
+            };
+
+            const handleEditFamilyName = (oldName) => {
+                setEditFamilyName(oldName);
+                setShowEditFamilyModal(true);
+            };
+
+            const handleSaveFamilyName = () => {
+                if (!editFamilyName.trim() || editFamilyName === expandedFamily) {
+                    setShowEditFamilyModal(false);
+                    return;
+                }
+
+                // Rename all words in this family
+                setWords(words.map(w => 
+                    w.family === expandedFamily 
+                        ? { ...w, family: editFamilyName.trim() }
+                        : w
+                ));
+
+                setExpandedFamily(editFamilyName.trim());
+                setShowEditFamilyModal(false);
+                setEditFamilyName('');
+            };
+
+            const handleDeleteFamily = (familyName) => {
+                const wordsInFamily = words.filter(w => w.family === familyName).length;
+                const confirmed = window.confirm(
+                    `Delete "${familyName}"?\n\nThis will permanently delete ${wordsInFamily} word${wordsInFamily === 1 ? '' : 's'}.\n\nThis action cannot be undone.`
+                );
+                
+                if (confirmed) {
+                    // Delete all words in this family
+                    setWords(words.filter(w => w.family !== familyName));
+                    setExpandedFamily(null);
+                    setIsEditMode(false);
+                }
+            };
+
+            return (
+                <div className="app-container">
+                    <div className="orb-accent"></div>
+                    <div className="header">
+                        <div className="app-title">Families</div>
+                        {view === 'families' && (
+                            <button className="add-button" onClick={() => setShowAddModal(true)}>
+                                +
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="content">
+                        {view === 'families' && (
+                            <>
+                                {words.length === 0 ? (
+                                    <div className="empty-state">
+                                        <div className="empty-state-title">Start Building Your Vocabulary</div>
+                                        <div className="empty-state-text">Tap the + button to add your first word</div>
+                                    </div>
+                                ) : (
+                                    <div className="family-grid">
+                                        {familyNames.map(familyName => (
+                                            <div 
+                                                key={familyName} 
+                                                className="family-card"
+                                                onClick={() => setExpandedFamily(familyName)}
+                                            >
+                                                <div className="family-title">{familyName}</div>
+                                                <div className="word-preview">
+                                                    {families[familyName].slice(0, 3).map(word => (
+                                                        <div key={word.id} className="word-preview-item">
+                                                            • {word.german}
+                                                        </div>
+                                                    ))}
+                                                    {families[familyName].length > 3 && (
+                                                        <div className="word-preview-item">
+                                                            + {families[familyName].length - 3} more
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {view === 'flashcards' && (
+                            <>
+                                {words.length === 0 ? (
+                                    <div className="empty-state">
+                                        <div className="empty-state-title">No Words Yet</div>
+                                        <div className="empty-state-text">Add some words to start practicing</div>
+                                    </div>
+                                ) : shuffledWords.length === 0 ? (
+                                    <div className="empty-state">
+                                        <div className="empty-state-title">Loading...</div>
+                                    </div>
+                                ) : (
+                                    <div className="flashcard-container">
+                                        <div className="flashcard-stack">
+                                            {/* Shadow card (empty - just for visual depth) */}
+                                            <div className="flashcard shadow">
+                                                <div className="flashcard-inner">
+                                                    <div className="flashcard-face flashcard-front">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Current card - the one being animated/displayed */}
+                                            {(() => {
+                                                const currentWord = shuffledWords[currentFlashcardIndex];
+                                                let cardClass = 'flashcard ';
+                                                
+                                                if (animationClass === 'next') {
+                                                    cardClass += 'slide-out-right';
+                                                } else if (animationClass === 'prev') {
+                                                    cardClass += 'slide-out-left';
+                                                } else {
+                                                    cardClass += 'top';
+                                                }
+                                                
+                                                return (
+                                                    <div 
+                                                        className={cardClass}
+                                                        onClick={() => !isAnimating && setIsFlipped(!isFlipped)}
+                                                    >
+                                                        <div className={`flashcard-inner ${isFlipped ? 'flipped' : ''}`}>
+                                                            <div className="flashcard-face flashcard-front">
+                                                                <div className={`flashcard-text ${getFontSizeClass(currentWord?.german)}`}>
+                                                                    {currentWord?.german}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flashcard-face flashcard-back">
+                                                                <div className={`flashcard-text ${getFontSizeClass(currentWord?.english)}`}>
+                                                                    {currentWord?.english}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
+
+                                            {/* Incoming card (slides in during animation) */}
+                                            {animationClass && (() => {
+                                                let newIndex;
+                                                let slideClass;
+                                                
+                                                if (animationClass === 'next') {
+                                                    newIndex = (currentFlashcardIndex + 1) % shuffledWords.length;
+                                                    slideClass = 'slide-in-left';
+                                                } else {
+                                                    newIndex = (currentFlashcardIndex - 1 + shuffledWords.length) % shuffledWords.length;
+                                                    slideClass = 'slide-in-right';
+                                                }
+                                                
+                                                const newWord = shuffledWords[newIndex];
+                                                
+                                                return (
+                                                    <div className={`flashcard ${slideClass}`}>
+                                                        <div className="flashcard-inner">
+                                                            <div className="flashcard-face flashcard-front">
+                                                                <div className={`flashcard-text ${getFontSizeClass(newWord?.german)}`}>
+                                                                    {newWord?.german}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flashcard-face flashcard-back">
+                                                                <div className={`flashcard-text ${getFontSizeClass(newWord?.english)}`}>
+                                                                    {newWord?.english}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                        <div className="flashcard-nav">
+                                            <button 
+                                                className="flashcard-nav-button"
+                                                onClick={handlePrevFlashcard}
+                                                disabled={isAnimating}
+                                            >
+                                                ← Back
+                                            </button>
+                                            <button 
+                                                className="flashcard-nav-button"
+                                                onClick={handleNextFlashcard}
+                                                disabled={isAnimating}
+                                            >
+                                                Next →
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    {/* Add Word Modal */}
+                    {showAddModal && (
+                        <div className="overlay" onClick={() => setShowAddModal(false)}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-title">Add New Word</div>
+                                <div className="input-group">
+                                    <label className="input-label">German Word</label>
+                                    <input 
+                                        type="text"
+                                        className="input-field"
+                                        value={germanWord}
+                                        onChange={(e) => setGermanWord(e.target.value)}
+                                        placeholder="das Haus"
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Translation</label>
+                                    <input 
+                                        type="text"
+                                        className="input-field"
+                                        value={englishWord}
+                                        onChange={(e) => setEnglishWord(e.target.value)}
+                                        placeholder="the house"
+                                        onKeyPress={(e) => e.key === 'Enter' && handleAddWord()}
+                                    />
+                                </div>
+                                <div className="button-group">
+                                    <button 
+                                        className="button button-secondary"
+                                        onClick={() => setShowAddModal(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        className="button button-primary"
+                                        onClick={handleAddWord}
+                                    >
+                                        Add Word
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Expanded Family Modal */}
+                    {expandedFamily && (
+                        <div className="overlay" onClick={() => { setExpandedFamily(null); setIsEditMode(false); setShowFamilySelector(null); }}>
+                            <div className="expanded-family" onClick={(e) => e.stopPropagation()}>
+                                <div className="expanded-family-header">
+                                    <div className="expanded-family-title-section">
+                                        <div className="expanded-family-title">{expandedFamily}</div>
+                                        {isEditMode && (
+                                            <>
+                                                <button 
+                                                    className="family-action-button edit-name"
+                                                    onClick={() => handleEditFamilyName(expandedFamily)}
+                                                    title="Rename family"
+                                                >
+                                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    </svg>
+                                                </button>
+                                                <button 
+                                                    className="family-action-button delete-family"
+                                                    onClick={() => handleDeleteFamily(expandedFamily)}
+                                                    title="Delete family"
+                                                >
+                                                    <DeleteIcon />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                    <button 
+                                        className={`edit-button ${isEditMode ? 'active' : ''}`}
+                                        onClick={() => setIsEditMode(!isEditMode)}
+                                        title="Edit mode"
+                                    >
+                                        <PencilIcon />
+                                    </button>
+                                </div>
+                                {families[expandedFamily].map(word => (
+                                    <div key={word.id} className={`word-list-item ${isEditMode ? 'edit-mode' : ''}`}>
+                                        {isEditMode && (
+                                            <button 
+                                                className="word-family-button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowFamilySelector(word.id);
+                                                }}
+                                            >
+                                                <FamiliesIcon />
+                                            </button>
+                                        )}
+                                        <div className="word-german">{word.german}</div>
+                                        <div className="word-english">{word.english}</div>
+                                        {isEditMode && (
+                                            <div className="word-action-buttons">
+                                                <button 
+                                                    className="action-button edit"
+                                                    onClick={() => handleEditWord(word)}
+                                                >
+                                                    <PencilIcon />
+                                                </button>
+                                                <button 
+                                                    className="action-button delete"
+                                                    onClick={() => handleDeleteWord(word.id)}
+                                                >
+                                                    <DeleteIcon />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Family Selector Modal */}
+                    {showFamilySelector && (
+                        <div className="family-selector-overlay" onClick={() => setShowFamilySelector(null)}>
+                            <div className="family-selector-modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="family-selector-header">
+                                    <div className="family-selector-title">Move to family</div>
+                                    <button 
+                                        className="family-selector-close"
+                                        onClick={() => setShowFamilySelector(null)}
+                                    >
+                                        <DeleteIcon />
+                                    </button>
+                                </div>
+                                {familyNames.filter(f => f !== expandedFamily).map(familyName => (
+                                    <div 
+                                        key={familyName}
+                                        className="family-option"
+                                        onClick={() => {
+                                            handleMoveToFamily(showFamilySelector, familyName);
+                                            setShowFamilySelector(null);
+                                        }}
+                                    >
+                                        {familyName}
+                                    </div>
+                                ))}
+                                <div 
+                                    className="family-option create-new"
+                                    onClick={() => {
+                                        handleCreateNewFamily(showFamilySelector);
+                                        setShowFamilySelector(null);
+                                    }}
+                                >
+                                    + Create New Family
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Edit Word Modal */}
+                    {showEditWordModal && (
+                        <div className="overlay" onClick={() => setShowEditWordModal(false)}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-title">Edit Word</div>
+                                <div className="input-group">
+                                    <label className="input-label">German Word</label>
+                                    <input 
+                                        type="text"
+                                        className="input-field"
+                                        value={editWordGerman}
+                                        onChange={(e) => setEditWordGerman(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Translation</label>
+                                    <input 
+                                        type="text"
+                                        className="input-field"
+                                        value={editWordEnglish}
+                                        onChange={(e) => setEditWordEnglish(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSaveEditWord()}
+                                    />
+                                </div>
+                                <div className="button-group">
+                                    <button 
+                                        className="button button-secondary"
+                                        onClick={() => setShowEditWordModal(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        className="button button-primary"
+                                        onClick={handleSaveEditWord}
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Edit Family Name Modal */}
+                    {showEditFamilyModal && (
+                        <div className="overlay" onClick={() => setShowEditFamilyModal(false)}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <div className="modal-title">Rename Family</div>
+                                <div className="input-group">
+                                    <label className="input-label">Family Name</label>
+                                    <input 
+                                        type="text"
+                                        className="input-field"
+                                        value={editFamilyName}
+                                        onChange={(e) => setEditFamilyName(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSaveFamilyName()}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="button-group">
+                                    <button 
+                                        className="button button-secondary"
+                                        onClick={() => setShowEditFamilyModal(false)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        className="button button-primary"
+                                        onClick={handleSaveFamilyName}
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Navigation Bar */}
+                    <div className="nav-bar">
+                        <button 
+                            className={`nav-button ${view === 'families' ? 'active' : ''}`}
+                            onClick={() => setView('families')}
+                        >
+                            <FamiliesIcon />
+                        </button>
+                        <button 
+                            className={`nav-button ${view === 'flashcards' ? 'active' : ''}`}
+                            onClick={() => {
+                                setView('flashcards');
+                                setIsFlipped(false);
+                            }}
+                        >
+                            <FlashcardsIcon />
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
