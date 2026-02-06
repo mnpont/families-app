@@ -15,6 +15,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -127,6 +128,38 @@
             transform: scale(1.05);
             box-shadow: 0 6px 30px rgba(255, 154, 158, 0.4);
         }
+
+        .sync-status {
+            position: absolute;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .sync-dot.syncing {
+            background: #f59e0b;
+        }
+
+        .sync-dot.error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
 
         .content {
             flex: 1;
@@ -984,6 +1017,13 @@
             const [isAnimating, setIsAnimating] = useState(false);
             const [animationClass, setAnimationClass] = useState('');
             const [shuffledWords, setShuffledWords] = useState([]);
+            // Supabase configuration
+            const supabase = window.supabase.createClient(
+                'https://ethrzcogkfrlhqwgqplg.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0aHJ6Y29na2ZybGhxd2dxcGxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0MDkzOTMsImV4cCI6MjA4NTk4NTM5M30.QrWl-SF9xJGQ_2VvJQc_KusbHuChZzXezKxk3MFJwAw'
+            );
+            const [syncStatus, setSyncStatus] = useState('synced'); // 'synced', 'syncing', 'error'
+
 
             // Shuffle array helper
             const shuffleArray = (array) => {
@@ -2994,43 +3034,146 @@
   }
 ];
             
-            // Load words from localStorage on mount
+            // Load words from Supabase/localStorage on mount
             useEffect(() => {
-                const saved = localStorage.getItem('germanVocab');
-                const version = localStorage.getItem('germanVocabVersion');
+                const loadWords = async () => {
+                    try {
+                        setSyncStatus('syncing');
+                        
+                        // Try to load from Supabase first
+                        const { data, error } = await supabase
+                            .from('words')
+                            .select('*')
+                            .order('date_added', { ascending: true });
+
+                        if (error) throw error;
+
+                        if (data && data.length > 0) {
+                            // Convert Supabase data to local format
+                            const localWords = data.map(word => ({
+                                id: word.id,
+                                german: word.german,
+                                english: word.english,
+                                family: word.family,
+                                dateAdded: word.date_added
+                            }));
+                            setWords(localWords);
+                            localStorage.setItem('germanVocab', JSON.stringify(localWords));
+                            localStorage.setItem('germanVocabVersion', '1.0');
+                            setSyncStatus('synced');
+                        } else {
+                            // No data in Supabase, check localStorage or use preloaded
+                            const saved = localStorage.getItem('germanVocab');
+                            const version = localStorage.getItem('germanVocabVersion');
+                            
+                            if (version !== '1.0') {
+                                // First time - use preloaded words and sync to Supabase
+                                setWords(preLoadedWords);
+                                localStorage.setItem('germanVocab', JSON.stringify(preLoadedWords));
+                                localStorage.setItem('germanVocabVersion', '1.0');
+                                
+                                // Sync preloaded words to Supabase
+                                for (const word of preLoadedWords) {
+                                    await supabase.from('words').insert({
+                                        german: word.german,
+                                        english: word.english,
+                                        family: word.family,
+                                        date_added: word.dateAdded,
+                                        user_id: null
+                                    });
+                                }
+                                setSyncStatus('synced');
+                            } else if (saved) {
+                                // Have local data - sync to Supabase
+                                const localWords = JSON.parse(saved);
+                                setWords(localWords);
+                                
+                                for (const word of localWords) {
+                                    await supabase.from('words').insert({
+                                        german: word.german,
+                                        english: word.english,
+                                        family: word.family,
+                                        date_added: word.dateAdded,
+                                        user_id: null
+                                    });
+                                }
+                                setSyncStatus('synced');
+                            } else {
+                                setWords([]);
+                                setSyncStatus('synced');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error loading words:', error);
+                        // Fallback to localStorage
+                        const saved = localStorage.getItem('germanVocab');
+                        const version = localStorage.getItem('germanVocabVersion');
+                        
+                        if (version !== '1.0') {
+                            setWords(preLoadedWords);
+                            localStorage.setItem('germanVocab', JSON.stringify(preLoadedWords));
+                            localStorage.setItem('germanVocabVersion', '1.0');
+                        } else if (saved) {
+                            setWords(JSON.parse(saved));
+                        }
+                        setSyncStatus('error');
+                    }
+                };
                 
-                // If version is not 1.0, load pre-loaded words
-                if (version !== '1.0') {
-                    setWords(preLoadedWords);
-                    localStorage.setItem('germanVocab', JSON.stringify(preLoadedWords));
-                    localStorage.setItem('germanVocabVersion', '1.0');
-                } else if (saved) {
-                    setWords(JSON.parse(saved));
-                }
+                loadWords();
             }, []);
 
 
             // Save words to localStorage whenever they change
             useEffect(() => {
-                localStorage.setItem('germanVocab', JSON.stringify(words));
+                if (words.length > 0) {
+                    localStorage.setItem('germanVocab', JSON.stringify(words));
+                }
             }, [words]);
 
-            const handleAddWord = () => {
+            const handleAddWord = async () => {
                 if (!germanWord.trim() || !englishWord.trim()) return;
 
-                const family = classifyWord(germanWord, englishWord);
-                const newWord = {
-                    id: Date.now(),
-                    german: germanWord.trim(),
-                    english: englishWord.trim(),
-                    family: family,
-                    dateAdded: new Date().toISOString()
-                };
+                try {
+                    setSyncStatus('syncing');
+                    const family = classifyWord(germanWord, englishWord);
+                    
+                    const newWord = {
+                        german: germanWord.trim(),
+                        english: englishWord.trim(),
+                        family: family,
+                        date_added: new Date().toISOString(),
+                        user_id: null
+                    };
 
-                setWords([...words, newWord]);
-                setGermanWord('');
-                setEnglishWord('');
-                setShowAddModal(false);
+                    // Insert into Supabase
+                    const { data, error } = await supabase
+                        .from('words')
+                        .insert(newWord)
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    // Update local state
+                    const localWord = {
+                        id: data.id,
+                        german: data.german,
+                        english: data.english,
+                        family: data.family,
+                        dateAdded: data.date_added
+                    };
+
+                    setWords([...words, localWord]);
+                    setGermanWord('');
+                    setEnglishWord('');
+                    setShowAddModal(false);
+                    setSyncStatus('synced');
+                } catch (error) {
+                    console.error('Error adding word:', error);
+                    setSyncStatus('error');
+                    alert('Failed to add word. Please try again.');
+                }
             };
 
             const getFamilies = () => {
@@ -3073,8 +3216,28 @@
                 }, 300);
             };
 
-            const handleDeleteWord = (wordId) => {
-                setWords(words.filter(w => w.id !== wordId));
+            const handleDeleteWord = async (wordId) => {
+                if (confirm('Are you sure you want to delete this word?')) {
+                    try {
+                        setSyncStatus('syncing');
+                        
+                        // Delete from Supabase
+                        const { error } = await supabase
+                            .from('words')
+                            .delete()
+                            .eq('id', wordId);
+
+                        if (error) throw error;
+
+                        // Update local state
+                        setWords(words.filter(w => w.id !== wordId));
+                        setSyncStatus('synced');
+                    } catch (error) {
+                        console.error('Error deleting word:', error);
+                        setSyncStatus('error');
+                        alert('Failed to delete word. Please try again.');
+                    }
+                }
             };
 
             const handleEditWord = (word) => {
@@ -3084,19 +3247,40 @@
                 setShowEditWordModal(true);
             };
 
-            const handleSaveEditWord = () => {
+            const handleSaveEditWord = async () => {
                 if (!editWordGerman.trim() || !editWordEnglish.trim()) return;
                 
-                setWords(words.map(w => 
-                    w.id === editingWord.id 
-                        ? { ...w, german: editWordGerman.trim(), english: editWordEnglish.trim() }
-                        : w
-                ));
-                
-                setShowEditWordModal(false);
-                setEditingWord(null);
-                setEditWordGerman('');
-                setEditWordEnglish('');
+                try {
+                    setSyncStatus('syncing');
+                    
+                    // Update in Supabase
+                    const { error } = await supabase
+                        .from('words')
+                        .update({
+                            german: editWordGerman.trim(),
+                            english: editWordEnglish.trim()
+                        })
+                        .eq('id', editingWord.id);
+
+                    if (error) throw error;
+
+                    // Update local state
+                    setWords(words.map(w => 
+                        w.id === editingWord.id 
+                            ? { ...w, german: editWordGerman.trim(), english: editWordEnglish.trim() }
+                            : w
+                    ));
+                    
+                    setShowEditWordModal(false);
+                    setEditingWord(null);
+                    setEditWordGerman('');
+                    setEditWordEnglish('');
+                    setSyncStatus('synced');
+                } catch (error) {
+                    console.error('Error updating word:', error);
+                    setSyncStatus('error');
+                    alert('Failed to update word. Please try again.');
+                }
             };
 
             const handleMoveToFamily = (wordId, newFamily) => {
@@ -3156,6 +3340,14 @@
                 <div className="app-container">
                     <div className="orb-accent"></div>
                     <div className="header">
+                        <div className="sync-status">
+                            <div className={`sync-dot ${syncStatus}`}></div>
+                            <span>
+                                {syncStatus === 'synced' && 'Synced'}
+                                {syncStatus === 'syncing' && 'Syncing...'}
+                                {syncStatus === 'error' && 'Sync error'}
+                            </span>
+                        </div>
                         <div className="app-title">Families</div>
                         {view === 'families' && (
                             <button className="add-button" onClick={() => setShowAddModal(true)}>
