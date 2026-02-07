@@ -3291,13 +3291,29 @@
                 }
             };
 
-            const handleMoveToFamily = (wordId, newFamily) => {
-                setWords(words.map(w => 
-                    w.id === wordId 
-                        ? { ...w, family: newFamily }
-                        : w
-                ));
-                setShowFamilySelector(null);
+            const handleMoveToFamily = async (wordId, newFamily) => {
+                try {
+                    setSyncStatus('syncing');
+
+                    const { error } = await supabase
+                        .from('words')
+                        .update({ family: newFamily })
+                        .eq('id', wordId);
+
+                    if (error) throw error;
+
+                    setWords(words.map(w =>
+                        w.id === wordId
+                            ? { ...w, family: newFamily }
+                            : w
+                    ));
+                    setShowFamilySelector(null);
+                    setSyncStatus('synced');
+                } catch (error) {
+                    console.error('Error moving word to family:', error);
+                    setSyncStatus('error');
+                    alert('Failed to move word. Please try again.');
+                }
             };
 
             const handleCreateNewFamily = (wordId) => {
@@ -3312,35 +3328,67 @@
                 setShowEditFamilyModal(true);
             };
 
-            const handleSaveFamilyName = () => {
+            const handleSaveFamilyName = async () => {
                 if (!editFamilyName.trim() || editFamilyName === expandedFamily) {
                     setShowEditFamilyModal(false);
                     return;
                 }
 
-                // Rename all words in this family
-                setWords(words.map(w => 
-                    w.family === expandedFamily 
-                        ? { ...w, family: editFamilyName.trim() }
-                        : w
-                ));
+                try {
+                    setSyncStatus('syncing');
 
-                setExpandedFamily(editFamilyName.trim());
-                setShowEditFamilyModal(false);
-                setEditFamilyName('');
+                    // Rename family for all words in Supabase
+                    const { error } = await supabase
+                        .from('words')
+                        .update({ family: editFamilyName.trim() })
+                        .eq('family', expandedFamily);
+
+                    if (error) throw error;
+
+                    setWords(words.map(w =>
+                        w.family === expandedFamily
+                            ? { ...w, family: editFamilyName.trim() }
+                            : w
+                    ));
+
+                    setExpandedFamily(editFamilyName.trim());
+                    setShowEditFamilyModal(false);
+                    setEditFamilyName('');
+                    setSyncStatus('synced');
+                } catch (error) {
+                    console.error('Error renaming family:', error);
+                    setSyncStatus('error');
+                    alert('Failed to rename family. Please try again.');
+                }
             };
 
-            const handleDeleteFamily = (familyName) => {
+            const handleDeleteFamily = async (familyName) => {
                 const wordsInFamily = words.filter(w => w.family === familyName).length;
                 const confirmed = window.confirm(
                     `Delete "${familyName}"?\n\nThis will permanently delete ${wordsInFamily} word${wordsInFamily === 1 ? '' : 's'}.\n\nThis action cannot be undone.`
                 );
-                
+
                 if (confirmed) {
-                    // Delete all words in this family
-                    setWords(words.filter(w => w.family !== familyName));
-                    setExpandedFamily(null);
-                    setIsEditMode(false);
+                    try {
+                        setSyncStatus('syncing');
+
+                        // Delete all words in this family from Supabase
+                        const { error } = await supabase
+                            .from('words')
+                            .delete()
+                            .eq('family', familyName);
+
+                        if (error) throw error;
+
+                        setWords(words.filter(w => w.family !== familyName));
+                        setExpandedFamily(null);
+                        setIsEditMode(false);
+                        setSyncStatus('synced');
+                    } catch (error) {
+                        console.error('Error deleting family:', error);
+                        setSyncStatus('error');
+                        alert('Failed to delete family. Please try again.');
+                    }
                 }
             };
 
