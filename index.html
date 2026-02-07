@@ -330,13 +330,15 @@
 
         .flashcard-stack {
             position: relative;
-            width: 420px;
+            width: 100%;
+            max-width: 420px;
             height: 280px;
         }
 
         .flashcard {
             position: absolute;
-            width: 420px;
+            width: 100%;
+            max-width: 420px;
             height: 280px;
             cursor: pointer;
         }
@@ -3493,14 +3495,14 @@
                                                 onClick={handlePrevFlashcard}
                                                 disabled={isAnimating}
                                             >
-                                                ← Back
+                                                Back
                                             </button>
                                             <button 
                                                 className="flashcard-nav-button"
                                                 onClick={handleNextFlashcard}
                                                 disabled={isAnimating}
                                             >
-                                                Next →
+                                                Next
                                             </button>
                                         </div>
                                     </div>
