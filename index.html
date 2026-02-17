@@ -3646,45 +3646,34 @@
                                         Add Family
                                     </button>
                                 </div>
-                                {addModalMode === 'word' ? (
-                                    <>
-                                        <div className="input-group">
-                                            <label className="input-label">German Word</label>
-                                            <input
-                                                type="text"
-                                                className="input-field"
-                                                value={germanWord}
-                                                onChange={(e) => setGermanWord(e.target.value)}
-                                                placeholder="das Haus"
-                                                autoFocus
-                                            />
-                                        </div>
-                                        <div className="input-group">
-                                            <label className="input-label">Translation</label>
-                                            <input
-                                                type="text"
-                                                className="input-field"
-                                                value={englishWord}
-                                                onChange={(e) => setEnglishWord(e.target.value)}
-                                                placeholder="the house"
-                                                onKeyPress={(e) => e.key === 'Enter' && handleAddWord()}
-                                            />
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="input-group">
-                                        <label className="input-label">Family Name</label>
-                                        <input
-                                            type="text"
-                                            className="input-field"
-                                            value={newFamilyName}
-                                            onChange={(e) => setNewFamilyName(e.target.value)}
-                                            placeholder="e.g. Colors, Furniture..."
-                                            autoFocus
-                                            onKeyPress={(e) => e.key === 'Enter' && handleAddFamily()}
-                                        />
-                                    </div>
-                                )}
+                                <div className="input-group">
+                                    <label className="input-label">{addModalMode === 'word' ? 'German Word' : 'Family Name'}</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        value={addModalMode === 'word' ? germanWord : newFamilyName}
+                                        onChange={(e) => addModalMode === 'word' ? setGermanWord(e.target.value) : setNewFamilyName(e.target.value)}
+                                        placeholder={addModalMode === 'word' ? 'das Haus' : 'e.g. Colors, Furniture...'}
+                                        autoFocus
+                                        onKeyPress={(e) => e.key === 'Enter' && addModalMode === 'family' && handleAddFamily()}
+                                    />
+                                </div>
+                                <div className="input-group" style={{
+                                    opacity: addModalMode === 'word' ? 1 : 0,
+                                    pointerEvents: addModalMode === 'word' ? 'auto' : 'none',
+                                    transition: 'opacity 0.3s ease'
+                                }}>
+                                    <label className="input-label">Translation</label>
+                                    <input
+                                        type="text"
+                                        className="input-field"
+                                        value={englishWord}
+                                        onChange={(e) => setEnglishWord(e.target.value)}
+                                        placeholder="the house"
+                                        tabIndex={addModalMode === 'word' ? 0 : -1}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleAddWord()}
+                                    />
+                                </div>
                                 <div className="button-group">
                                     <button
                                         className="button button-secondary"
