@@ -899,6 +899,43 @@
             color: #666;
         }
 
+        .word-example {
+            margin-top: 6px;
+            font-size: 13px;
+            font-style: italic;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        .word-example-de {
+            color: #777;
+        }
+
+        .word-example-en {
+            color: #999;
+        }
+
+        .example-sentence {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .example-sentence-de {
+            font-size: 16px;
+            font-style: italic;
+            color: #444;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        .example-sentence-en {
+            font-size: 13px;
+            color: #888;
+            line-height: 1.4;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -3097,7 +3134,9 @@
                                 german: word.german,
                                 english: word.english,
                                 family: word.family,
-                                dateAdded: word.date_added
+                                dateAdded: word.date_added,
+                                exampleSentenceDe: word.example_sentence_de || null,
+                                exampleSentenceEn: word.example_sentence_en || null
                             }));
                             setWords(localWords);
                             localStorage.setItem('germanVocab', JSON.stringify(localWords));
@@ -3567,6 +3606,14 @@
                                                                 <div className={`flashcard-text ${getFontSizeClass(currentWord?.english)}`}>
                                                                     {currentWord?.english}
                                                                 </div>
+                                                                {currentWord?.exampleSentenceDe && (
+                                                                    <div className="example-sentence">
+                                                                        <div className="example-sentence-de">{currentWord.exampleSentenceDe}</div>
+                                                                        {currentWord.exampleSentenceEn && (
+                                                                            <div className="example-sentence-en">{currentWord.exampleSentenceEn}</div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3600,6 +3647,14 @@
                                                                 <div className={`flashcard-text ${getFontSizeClass(newWord?.english)}`}>
                                                                     {newWord?.english}
                                                                 </div>
+                                                                {newWord?.exampleSentenceDe && (
+                                                                    <div className="example-sentence">
+                                                                        <div className="example-sentence-de">{newWord.exampleSentenceDe}</div>
+                                                                        {newWord.exampleSentenceEn && (
+                                                                            <div className="example-sentence-en">{newWord.exampleSentenceEn}</div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3744,6 +3799,14 @@
                                         )}
                                         <div className="word-german">{word.german}</div>
                                         <div className="word-english">{word.english}</div>
+                                        {word.exampleSentenceDe && !isEditMode && (
+                                            <div className="word-example">
+                                                <span className="word-example-de">{word.exampleSentenceDe}</span>
+                                                {word.exampleSentenceEn && (
+                                                    <span className="word-example-en"> — {word.exampleSentenceEn}</span>
+                                                )}
+                                            </div>
+                                        )}
                                         {isEditMode && (
                                             <div className="word-action-buttons">
                                                 <button 
