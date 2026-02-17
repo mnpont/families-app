@@ -318,6 +318,34 @@
             background: rgba(0, 0, 0, 0.08);
         }
 
+        .modal-toggle {
+            display: flex;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+        }
+
+        .modal-toggle-option {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            background: transparent;
+            color: #999;
+        }
+
+        .modal-toggle-option.active {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 154, 158, 0.3);
+        }
+
         .flashcard-container {
             display: flex;
             flex-direction: column;
@@ -1059,6 +1087,12 @@
             const [editWordEnglish, setEditWordEnglish] = useState('');
             const [showEditFamilyModal, setShowEditFamilyModal] = useState(false);
             const [editFamilyName, setEditFamilyName] = useState('');
+            const [addModalMode, setAddModalMode] = useState('word'); // 'word' or 'family'
+            const [newFamilyName, setNewFamilyName] = useState('');
+            const [emptyFamilies, setEmptyFamilies] = useState(() => {
+                const saved = localStorage.getItem('germanVocabEmptyFamilies');
+                return saved ? JSON.parse(saved) : [];
+            });
 
             // Helper function to determine font size based on text length
             const getFontSizeClass = (text) => {
@@ -3139,6 +3173,11 @@
                 }
             }, [words]);
 
+            // Save empty families to localStorage
+            useEffect(() => {
+                localStorage.setItem('germanVocabEmptyFamilies', JSON.stringify(emptyFamilies));
+            }, [emptyFamilies]);
+
             const handleAddWord = async () => {
                 if (!germanWord.trim() || !englishWord.trim()) return;
 
@@ -3184,8 +3223,29 @@
                 }
             };
 
+            const handleAddFamily = () => {
+                if (!newFamilyName.trim()) return;
+
+                const trimmedName = newFamilyName.trim();
+
+                // Check if family already exists
+                if (families[trimmedName]) {
+                    alert('A family with this name already exists.');
+                    return;
+                }
+
+                setEmptyFamilies([...emptyFamilies, trimmedName]);
+                setNewFamilyName('');
+                setAddModalMode('word');
+                setShowAddModal(false);
+            };
+
             const getFamilies = () => {
                 const familyMap = {};
+                // Include empty families
+                emptyFamilies.forEach(name => {
+                    familyMap[name] = [];
+                });
                 words.forEach(word => {
                     if (!familyMap[word.family]) {
                         familyMap[word.family] = [];
@@ -3194,6 +3254,15 @@
                 });
                 return familyMap;
             };
+
+            // Clean up empty families that now have words
+            useEffect(() => {
+                const wordFamilies = new Set(words.map(w => w.family));
+                const stillEmpty = emptyFamilies.filter(name => !wordFamilies.has(name));
+                if (stillEmpty.length !== emptyFamilies.length) {
+                    setEmptyFamilies(stillEmpty);
+                }
+            }, [words]);
 
             const families = getFamilies();
             const familyNames = Object.keys(families);
@@ -3415,7 +3484,7 @@
                     <div className="content">
                         {view === 'families' && (
                             <>
-                                {words.length === 0 ? (
+                                {words.length === 0 && emptyFamilies.length === 0 ? (
                                     <div className="empty-state">
                                         <div className="empty-state-title">Start Building Your Vocabulary</div>
                                         <div className="empty-state-text">Tap the + button to add your first word</div>
@@ -3559,45 +3628,75 @@
                         )}
                     </div>
 
-                    {/* Add Word Modal */}
+                    {/* Add Word / Add Family Modal */}
                     {showAddModal && (
-                        <div className="overlay" onClick={() => setShowAddModal(false)}>
+                        <div className="overlay" onClick={() => { setShowAddModal(false); setAddModalMode('word'); }}>
                             <div className="modal" onClick={(e) => e.stopPropagation()}>
-                                <div className="modal-title">Add New Word</div>
-                                <div className="input-group">
-                                    <label className="input-label">German Word</label>
-                                    <input 
-                                        type="text"
-                                        className="input-field"
-                                        value={germanWord}
-                                        onChange={(e) => setGermanWord(e.target.value)}
-                                        placeholder="das Haus"
-                                        autoFocus
-                                    />
+                                <div className="modal-toggle">
+                                    <button
+                                        className={`modal-toggle-option ${addModalMode === 'word' ? 'active' : ''}`}
+                                        onClick={() => setAddModalMode('word')}
+                                    >
+                                        Add Word
+                                    </button>
+                                    <button
+                                        className={`modal-toggle-option ${addModalMode === 'family' ? 'active' : ''}`}
+                                        onClick={() => setAddModalMode('family')}
+                                    >
+                                        Add Family
+                                    </button>
                                 </div>
-                                <div className="input-group">
-                                    <label className="input-label">Translation</label>
-                                    <input 
-                                        type="text"
-                                        className="input-field"
-                                        value={englishWord}
-                                        onChange={(e) => setEnglishWord(e.target.value)}
-                                        placeholder="the house"
-                                        onKeyPress={(e) => e.key === 'Enter' && handleAddWord()}
-                                    />
-                                </div>
+                                {addModalMode === 'word' ? (
+                                    <>
+                                        <div className="input-group">
+                                            <label className="input-label">German Word</label>
+                                            <input
+                                                type="text"
+                                                className="input-field"
+                                                value={germanWord}
+                                                onChange={(e) => setGermanWord(e.target.value)}
+                                                placeholder="das Haus"
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">Translation</label>
+                                            <input
+                                                type="text"
+                                                className="input-field"
+                                                value={englishWord}
+                                                onChange={(e) => setEnglishWord(e.target.value)}
+                                                placeholder="the house"
+                                                onKeyPress={(e) => e.key === 'Enter' && handleAddWord()}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="input-group">
+                                        <label className="input-label">Family Name</label>
+                                        <input
+                                            type="text"
+                                            className="input-field"
+                                            value={newFamilyName}
+                                            onChange={(e) => setNewFamilyName(e.target.value)}
+                                            placeholder="e.g. Colors, Furniture..."
+                                            autoFocus
+                                            onKeyPress={(e) => e.key === 'Enter' && handleAddFamily()}
+                                        />
+                                    </div>
+                                )}
                                 <div className="button-group">
-                                    <button 
+                                    <button
                                         className="button button-secondary"
-                                        onClick={() => setShowAddModal(false)}
+                                        onClick={() => { setShowAddModal(false); setAddModalMode('word'); }}
                                     >
                                         Cancel
                                     </button>
-                                    <button 
+                                    <button
                                         className="button button-primary"
-                                        onClick={handleAddWord}
+                                        onClick={addModalMode === 'word' ? handleAddWord : handleAddFamily}
                                     >
-                                        Add Word
+                                        {addModalMode === 'word' ? 'Add Word' : 'Add Family'}
                                     </button>
                                 </div>
                             </div>
