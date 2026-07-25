@@ -13,3 +13,10 @@ create table if not exists translations (
 );
 
 create index if not exists translations_word_id_idx on translations(word_id);
+
+-- TODO(multi-translation support): once a word can have more than one
+-- translation into the same language, add a uniqueness constraint here
+-- (e.g. a partial unique index on (word_id, language_id) where is_primary)
+-- so at most one translation per word/language pair can be marked primary.
+-- Not needed yet -- every word backfilled from the legacy schema has
+-- exactly one translation, so this can't be violated today.

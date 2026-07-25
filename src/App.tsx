@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { LegacyWord } from './types/legacyWord';
 import { useVocabulary } from './hooks/useVocabulary';
-import { getFamilies } from './utils/families';
 import { Header } from './components/Header';
 import { NavBar } from './components/NavBar';
 import { FamiliesView } from './components/FamiliesView';
@@ -24,8 +23,9 @@ export default function App() {
 
   const {
     words,
+    families,
+    familyNames,
     syncStatus,
-    emptyFamilies,
     addWord,
     addFamily,
     deleteWord,
@@ -34,9 +34,6 @@ export default function App() {
     saveFamilyName,
     deleteFamily,
   } = useVocabulary();
-
-  const families = getFamilies(words, emptyFamilies);
-  const familyNames = Object.keys(families);
 
   const handleAddWord = async (german: string, english: string) => {
     const success = await addWord(german, english);
@@ -86,7 +83,7 @@ export default function App() {
           <FamiliesView
             families={families}
             familyNames={familyNames}
-            hasAnyContent={words.length > 0 || emptyFamilies.length > 0}
+            hasAnyContent={familyNames.length > 0}
             onSelectFamily={setExpandedFamily}
           />
         )}

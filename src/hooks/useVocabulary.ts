@@ -1,134 +1,57 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
 import { classifyWord } from '../utils/classifyWord';
-import { preLoadedWords } from '../data/preLoadedWords';
-import type { LegacyWord, LegacyWordRow } from '../types/legacyWord';
+import * as vocabularyApi from '../lib/vocabularyApi';
+import type { LegacyWord } from '../types/legacyWord';
 
 export type SyncStatus = 'synced' | 'syncing' | 'error';
 
-function rowToLocalWord(row: LegacyWordRow): LegacyWord {
-  return {
-    id: row.id,
-    german: row.german,
-    english: row.english,
-    family: row.family,
-    dateAdded: row.date_added,
-    exampleSentenceDe: row.example_sentence_de ?? null,
-    exampleSentenceEn: row.example_sentence_en ?? null,
-  };
-}
+const CACHE_KEY = 'vocabV2Cache';
 
 /**
- * Loads/persists the vocabulary list, mirroring the Supabase `words` table
- * and falling back to localStorage. Lifted from the original App() function
- * in index.html (see docs/audit.md Section 1) with no behavior changes --
- * still the legacy German/English schema and the same dual-writer pattern.
- * Phase 2 will replace this with the v2 schema (docs/v2-plan.md Section 1).
+ * Loads/persists vocabulary against the v2 schema (Word/Translation/
+ * ExampleSentence/Deck/DeckWord, see src/lib/vocabularyApi.ts), replacing
+ * the legacy `words`-table-backed version of this hook. The public shape
+ * (LegacyWord[], families map) and all behavior are unchanged -- still
+ * German-only, still classifyWord-based deck assignment -- only the
+ * storage moved.
+ *
+ * No more `emptyFamilies` localStorage special-casing (removed per Phase 0
+ * Step 2 item 8): a Deck row with no words IS an empty family now, so it
+ * doesn't need separate client-side tracking. No more bundled
+ * preLoadedWords seeding either -- that was a one-time legacy bootstrap;
+ * the v2 tables are seeded once via scripts/backfillToV2Schema.ts.
  */
 export function useVocabulary() {
   const [words, setWords] = useState<LegacyWord[]>([]);
+  const [families, setFamilies] = useState<Record<string, LegacyWord[]>>({});
+  const [familyNames, setFamilyNames] = useState<string[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
-  const [emptyFamilies, setEmptyFamilies] = useState<string[]>(() => {
-    const saved = localStorage.getItem('germanVocabEmptyFamilies');
-    return saved ? JSON.parse(saved) : [];
-  });
 
-  // Load words from Supabase/localStorage on mount
-  useEffect(() => {
-    const loadWords = async () => {
-      try {
-        setSyncStatus('syncing');
-
-        const { data, error } = await supabase
-          .from('words')
-          .select('*')
-          .order('date_added', { ascending: true });
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          const localWords = (data as LegacyWordRow[]).map(rowToLocalWord);
-          setWords(localWords);
-          localStorage.setItem('germanVocab', JSON.stringify(localWords));
-          localStorage.setItem('germanVocabVersion', '1.0');
-          setSyncStatus('synced');
-        } else {
-          const saved = localStorage.getItem('germanVocab');
-          const version = localStorage.getItem('germanVocabVersion');
-
-          if (version !== '1.0') {
-            setWords(preLoadedWords);
-            localStorage.setItem('germanVocab', JSON.stringify(preLoadedWords));
-            localStorage.setItem('germanVocabVersion', '1.0');
-
-            for (const word of preLoadedWords) {
-              await supabase.from('words').insert({
-                german: word.german,
-                english: word.english,
-                family: word.family,
-                date_added: word.dateAdded,
-                user_id: null,
-              });
-            }
-            setSyncStatus('synced');
-          } else if (saved) {
-            const localWords = JSON.parse(saved) as LegacyWord[];
-            setWords(localWords);
-
-            for (const word of localWords) {
-              await supabase.from('words').insert({
-                german: word.german,
-                english: word.english,
-                family: word.family,
-                date_added: word.dateAdded,
-                user_id: null,
-              });
-            }
-            setSyncStatus('synced');
-          } else {
-            setWords([]);
-            setSyncStatus('synced');
-          }
-        }
-      } catch (error) {
-        console.error('Error loading words:', error);
-        const saved = localStorage.getItem('germanVocab');
-        const version = localStorage.getItem('germanVocabVersion');
-
-        if (version !== '1.0') {
-          setWords(preLoadedWords);
-          localStorage.setItem('germanVocab', JSON.stringify(preLoadedWords));
-          localStorage.setItem('germanVocabVersion', '1.0');
-        } else if (saved) {
-          setWords(JSON.parse(saved));
-        }
-        setSyncStatus('error');
+  const reload = async () => {
+    try {
+      setSyncStatus('syncing');
+      const snapshot = await vocabularyApi.fetchVocabulary();
+      setWords(snapshot.words);
+      setFamilies(snapshot.families);
+      setFamilyNames(snapshot.familyNames);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(snapshot));
+      setSyncStatus('synced');
+    } catch (error) {
+      console.error('Error loading vocabulary:', error);
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const snapshot = JSON.parse(cached);
+        setWords(snapshot.words);
+        setFamilies(snapshot.families);
+        setFamilyNames(snapshot.familyNames);
       }
-    };
-
-    loadWords();
-  }, []);
-
-  // Save words to localStorage whenever they change
-  useEffect(() => {
-    if (words.length > 0) {
-      localStorage.setItem('germanVocab', JSON.stringify(words));
+      setSyncStatus('error');
     }
-  }, [words]);
+  };
 
-  // Save empty families to localStorage
   useEffect(() => {
-    localStorage.setItem('germanVocabEmptyFamilies', JSON.stringify(emptyFamilies));
-  }, [emptyFamilies]);
-
-  // Clean up empty families that now have words
-  useEffect(() => {
-    const wordFamilies = new Set(words.map((w) => w.family));
-    setEmptyFamilies((prev) => {
-      const stillEmpty = prev.filter((name) => !wordFamilies.has(name));
-      return stillEmpty.length !== prev.length ? stillEmpty : prev;
-    });
-  }, [words]);
+    reload();
+  }, []);
 
   const addWord = async (germanWord: string, englishWord: string): Promise<boolean> => {
     if (!germanWord.trim() || !englishWord.trim()) return false;
@@ -136,29 +59,8 @@ export function useVocabulary() {
     try {
       setSyncStatus('syncing');
       const family = classifyWord(germanWord, englishWord);
-
-      const newWord = {
-        german: germanWord.trim(),
-        english: englishWord.trim(),
-        family,
-        date_added: new Date().toISOString(),
-        user_id: null,
-      };
-
-      const { data, error } = await supabase.from('words').insert(newWord).select().single();
-
-      if (error) throw error;
-
-      const localWord: LegacyWord = {
-        id: data.id,
-        german: data.german,
-        english: data.english,
-        family: data.family,
-        dateAdded: data.date_added,
-      };
-
-      setWords((prev) => [...prev, localWord]);
-      setSyncStatus('synced');
+      await vocabularyApi.createWord(germanWord.trim(), englishWord.trim(), family);
+      await reload();
       return true;
     } catch (error) {
       console.error('Error adding word:', error);
@@ -168,16 +70,27 @@ export function useVocabulary() {
     }
   };
 
-  const addFamily = (name: string, families: Record<string, LegacyWord[]>): boolean => {
+  const addFamily = (name: string, existingFamilies: Record<string, LegacyWord[]>): boolean => {
     const trimmedName = name.trim();
     if (!trimmedName) return false;
 
-    if (families[trimmedName]) {
+    if (existingFamilies[trimmedName]) {
       alert('A family with this name already exists.');
       return false;
     }
 
-    setEmptyFamilies((prev) => [...prev, trimmedName]);
+    (async () => {
+      try {
+        setSyncStatus('syncing');
+        await vocabularyApi.createDeck(trimmedName);
+        await reload();
+      } catch (error) {
+        console.error('Error adding family:', error);
+        setSyncStatus('error');
+        alert('Failed to add family. Please try again.');
+      }
+    })();
+
     return true;
   };
 
@@ -186,12 +99,8 @@ export function useVocabulary() {
 
     try {
       setSyncStatus('syncing');
-
-      const { error } = await supabase.from('words').delete().eq('id', wordId);
-      if (error) throw error;
-
-      setWords((prev) => prev.filter((w) => w.id !== wordId));
-      setSyncStatus('synced');
+      await vocabularyApi.deleteWord(wordId);
+      await reload();
     } catch (error) {
       console.error('Error deleting word:', error);
       setSyncStatus('error');
@@ -204,18 +113,8 @@ export function useVocabulary() {
 
     try {
       setSyncStatus('syncing');
-
-      const { error } = await supabase
-        .from('words')
-        .update({ german: german.trim(), english: english.trim() })
-        .eq('id', wordId);
-
-      if (error) throw error;
-
-      setWords((prev) =>
-        prev.map((w) => (w.id === wordId ? { ...w, german: german.trim(), english: english.trim() } : w))
-      );
-      setSyncStatus('synced');
+      await vocabularyApi.updateWord(wordId, german.trim(), english.trim());
+      await reload();
       return true;
     } catch (error) {
       console.error('Error updating word:', error);
@@ -228,12 +127,8 @@ export function useVocabulary() {
   const moveToFamily = async (wordId: number, newFamily: string) => {
     try {
       setSyncStatus('syncing');
-
-      const { error } = await supabase.from('words').update({ family: newFamily }).eq('id', wordId);
-      if (error) throw error;
-
-      setWords((prev) => prev.map((w) => (w.id === wordId ? { ...w, family: newFamily } : w)));
-      setSyncStatus('synced');
+      await vocabularyApi.moveWordToDeck(wordId, newFamily);
+      await reload();
     } catch (error) {
       console.error('Error moving word to family:', error);
       setSyncStatus('error');
@@ -247,12 +142,8 @@ export function useVocabulary() {
 
     try {
       setSyncStatus('syncing');
-
-      const { error } = await supabase.from('words').update({ family: trimmed }).eq('family', oldName);
-      if (error) throw error;
-
-      setWords((prev) => prev.map((w) => (w.family === oldName ? { ...w, family: trimmed } : w)));
-      setSyncStatus('synced');
+      await vocabularyApi.renameDeck(oldName, trimmed);
+      await reload();
       return trimmed;
     } catch (error) {
       console.error('Error renaming family:', error);
@@ -263,7 +154,7 @@ export function useVocabulary() {
   };
 
   const deleteFamily = async (familyName: string): Promise<boolean> => {
-    const wordsInFamily = words.filter((w) => w.family === familyName).length;
+    const wordsInFamily = families[familyName]?.length ?? 0;
     const confirmed = window.confirm(
       `Delete "${familyName}"?\n\nThis will permanently delete ${wordsInFamily} word${
         wordsInFamily === 1 ? '' : 's'
@@ -274,12 +165,8 @@ export function useVocabulary() {
 
     try {
       setSyncStatus('syncing');
-
-      const { error } = await supabase.from('words').delete().eq('family', familyName);
-      if (error) throw error;
-
-      setWords((prev) => prev.filter((w) => w.family !== familyName));
-      setSyncStatus('synced');
+      await vocabularyApi.deleteDeckAndWords(familyName);
+      await reload();
       return true;
     } catch (error) {
       console.error('Error deleting family:', error);
@@ -291,8 +178,9 @@ export function useVocabulary() {
 
   return {
     words,
+    families,
+    familyNames,
     syncStatus,
-    emptyFamilies,
     addWord,
     addFamily,
     deleteWord,
