@@ -14,8 +14,7 @@
 -- read/write those) -- that requires real auth, which is out of scope for
 -- Phase 0/1.
 --
--- Run this AFTER 001-006 and BEFORE rotating the anon key (008 is unrelated
--- and independent of this file).
+-- Run this AFTER 001-007 and BEFORE rotating the anon key.
 
 alter table languages enable row level security;
 alter table words enable row level security;
@@ -49,7 +48,7 @@ create policy "example_sentences_delete_all" on example_sentences for delete usi
 -- open (the app has no login screen to gate them behind), but writes must
 -- target the owner constant -- this is the "RLS policies scoped to
 -- owner_id" from the Phase 0 Step 2 task, and the first real use of the
--- owner_id column added in 005_create_decks.sql.
+-- owner_id column added in 006_create_decks.sql.
 create policy "decks_select_all" on decks for select using (true);
 create policy "decks_write_own" on decks for insert
   with check (owner_id = '00000000-0000-0000-0000-000000000001');

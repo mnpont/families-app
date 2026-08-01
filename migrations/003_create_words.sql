@@ -1,7 +1,11 @@
 -- A vocabulary item in its own language. Replaces the legacy `words` table's
 -- flat german/english columns -- a Word here is single-language; translations
--- live in the `translations` table (003) so a word can have more than one.
+-- live in the `translations` table (004) so a word can have more than one.
 -- See docs/v2-plan.md Section 1.
+--
+-- Requires 002_rename_legacy_words_table.sql to have run first -- otherwise
+-- this collides with the legacy `words` table (create table if not exists
+-- silently no-ops instead of creating the new schema's table).
 
 create table if not exists words (
   id bigint generated always as identity primary key,

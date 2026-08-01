@@ -1,7 +1,7 @@
 /**
- * Backfills the legacy `words` table (german/english/family columns) into
- * the v2 schema (Language/Word/Translation/ExampleSentence/Deck/DeckWord,
- * see migrations/001-006 and docs/v2-plan.md Section 1).
+ * Backfills the renamed legacy `words_legacy` table (german/english/family
+ * columns) into the v2 schema (Language/Word/Translation/ExampleSentence/
+ * Deck/DeckWord, see migrations/001-007 and docs/v2-plan.md Section 1).
  *
  * Usage:
  *
@@ -13,18 +13,19 @@
  *     alongside this script.
  *
  *   npx tsx scripts/backfillToV2Schema.ts --source=live --dry-run
- *     Reads the real `words` table via Supabase (needs
- *     VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY in the environment) and
+ *     Reads the real `words_legacy` table via Supabase (needs
+ *     VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY, e.g. in .env.local) and
  *     computes the same counts against real data, but writes nothing.
  *     Run this before the real thing to catch surprises (e.g. words added
  *     since the last known snapshot).
  *
  *   npx tsx scripts/backfillToV2Schema.ts --source=live
- *     The real backfill: reads `words` and writes rows into the v2 tables.
- *     Run AFTER migrations 001-007 are applied and a backup has been taken
- *     (scripts/exportWordsBackup.ts). Do NOT run 008 (which renames the
- *     legacy `words` table) until after this completes successfully and
- *     you've spot-checked the results.
+ *     The real backfill: reads `words_legacy` and writes rows into the v2
+ *     tables. Run AFTER migrations 001-008 are applied (see
+ *     migrations/README.md for the required order -- 002 renames the
+ *     original `words` table to `words_legacy` before 003 creates the new
+ *     schema's `words` table) and a backup has been taken
+ *     (scripts/exportWordsBackup.ts, run before 002's rename).
  *
  * This script was written without any Supabase credentials available in
  * that session -- only --source=local --dry-run was actually run. Live
@@ -265,7 +266,11 @@ async function loadLegacyRows(source: 'local' | 'live'): Promise<LegacyWordRow[]
     throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in the environment.');
   }
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  const { data, error } = await supabase.from('words').select('*').order('id', { ascending: true });
+  // Reads from `words_legacy`, not `words` -- by the time this runs,
+  // migrations/002_rename_legacy_words_table.sql has already renamed the
+  // original table out of the way to make room for the new schema's Word
+  // table (see migrations/README.md for the full order of operations).
+  const { data, error } = await supabase.from('words_legacy').select('*').order('id', { ascending: true });
   if (error) throw error;
   return data as LegacyWordRow[];
 }
