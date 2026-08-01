@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { LegacyWord } from '../types/legacyWord';
+import type { VocabWord } from '../types/vocabWord';
 import { shuffleArray } from '../utils/shuffleArray';
 import { Flashcard } from './Flashcard';
 
 interface FlashcardsViewProps {
-  words: LegacyWord[];
+  words: VocabWord[];
 }
 
 function highlightWord(sentence: string, targetWord: string | undefined) {
@@ -16,7 +16,7 @@ function highlightWord(sentence: string, targetWord: string | undefined) {
 }
 
 export function FlashcardsView({ words }: FlashcardsViewProps) {
-  const [shuffledWords, setShuffledWords] = useState<LegacyWord[]>([]);
+  const [shuffledWords, setShuffledWords] = useState<VocabWord[]>([]);
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -83,7 +83,7 @@ export function FlashcardsView({ words }: FlashcardsViewProps) {
   else if (animationClass === 'prev') currentCardClass += 'slide-out-left';
   else currentCardClass += 'top';
 
-  let incomingWord: LegacyWord | undefined;
+  let incomingWord: VocabWord | undefined;
   let incomingClass = '';
   if (animationClass) {
     const newIndex =
@@ -114,15 +114,15 @@ export function FlashcardsView({ words }: FlashcardsViewProps) {
         {animationClass && <Flashcard word={incomingWord} className={incomingClass} />}
       </div>
 
-      {currentWord?.exampleSentenceDe && (
+      {currentWord?.exampleSentence && (
         <div className={`example-reveal ${showExample ? 'revealed' : ''}`} onClick={() => setShowExample(!showExample)}>
           {!showExample ? (
             <div className="example-reveal-hint">Tap to see example</div>
           ) : (
             <div className="example-reveal-content">
-              <div className="example-reveal-de">{highlightWord(currentWord.exampleSentenceDe, currentWord.german)}</div>
-              {currentWord.exampleSentenceEn && (
-                <div className="example-reveal-en">{currentWord.exampleSentenceEn}</div>
+              <div className="example-reveal-text">{highlightWord(currentWord.exampleSentence.text, currentWord.text)}</div>
+              {currentWord.exampleSentence.translationText && (
+                <div className="example-reveal-translation">{currentWord.exampleSentence.translationText}</div>
               )}
             </div>
           )}

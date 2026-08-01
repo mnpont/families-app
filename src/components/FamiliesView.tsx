@@ -1,7 +1,7 @@
-import type { LegacyWord } from '../types/legacyWord';
+import type { VocabWord } from '../types/vocabWord';
 
 interface FamiliesViewProps {
-  families: Record<string, LegacyWord[]>;
+  families: Record<string, VocabWord[]>;
   familyNames: string[];
   hasAnyContent: boolean;
   onSelectFamily: (name: string) => void;
@@ -25,7 +25,7 @@ export function FamiliesView({ families, familyNames, hasAnyContent, onSelectFam
           <div className="word-preview">
             {families[familyName].slice(0, 3).map((word) => (
               <div key={word.id} className="word-preview-item">
-                &bull; {word.german}
+                &bull; {word.text}
               </div>
             ))}
             {families[familyName].length > 3 && (

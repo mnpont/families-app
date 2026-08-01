@@ -1,33 +1,34 @@
 import { useState } from 'react';
-import type { LegacyWord } from '../types/legacyWord';
+import type { VocabWord } from '../types/vocabWord';
 
 interface EditWordModalProps {
-  word: LegacyWord;
+  word: VocabWord;
+  languageName: string;
   onClose: () => void;
-  onSave: (wordId: number, german: string, english: string) => void;
+  onSave: (wordId: number, text: string, translationText: string) => void;
 }
 
-export function EditWordModal({ word, onClose, onSave }: EditWordModalProps) {
-  const [german, setGerman] = useState(word.german);
-  const [english, setEnglish] = useState(word.english);
+export function EditWordModal({ word, languageName, onClose, onSave }: EditWordModalProps) {
+  const [text, setText] = useState(word.text);
+  const [translationText, setTranslationText] = useState(word.translation?.text ?? '');
 
-  const submit = () => onSave(word.id, german, english);
+  const submit = () => onSave(word.id, text, translationText);
 
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">Edit Word</div>
         <div className="input-group">
-          <label className="input-label">German Word</label>
-          <input type="text" className="input-field" value={german} onChange={(e) => setGerman(e.target.value)} autoFocus />
+          <label className="input-label">{languageName} Word</label>
+          <input type="text" className="input-field" value={text} onChange={(e) => setText(e.target.value)} autoFocus />
         </div>
         <div className="input-group">
           <label className="input-label">Translation</label>
           <input
             type="text"
             className="input-field"
-            value={english}
-            onChange={(e) => setEnglish(e.target.value)}
+            value={translationText}
+            onChange={(e) => setTranslationText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
           />
         </div>

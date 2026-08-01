@@ -89,6 +89,12 @@ body::after {
     letter-spacing: -0.3px;
 }
 
+.language-selector {
+    width: auto;
+    max-width: 140px;
+    margin-left: 12px;
+}
+
 .add-button {
     position: absolute;
     right: 20px;
@@ -866,14 +872,14 @@ body::after {
     box-shadow: 0 4px 12px rgba(142, 158, 255, 0.3);
 }
 
-.word-german {
+.word-text {
     font-size: 18px;
     font-weight: 600;
     color: #1a1a1a;
     margin-bottom: 4px;
 }
 
-.word-english {
+.word-translation {
     font-size: 14px;
     color: #666;
 }
@@ -886,11 +892,11 @@ body::after {
     line-height: 1.4;
 }
 
-.word-example-de {
+.word-example-text {
     color: #777;
 }
 
-.word-example-en {
+.word-example-translation {
     color: #999;
 }
 
@@ -934,19 +940,19 @@ body::after {
     }
 }
 
-.example-reveal-de {
+.example-reveal-text {
     font-size: 16px;
     color: #333;
     line-height: 1.5;
     margin-bottom: 4px;
 }
 
-.example-reveal-de strong {
+.example-reveal-text strong {
     color: #e8677d;
     font-weight: 700;
 }
 
-.example-reveal-en {
+.example-reveal-translation {
     font-size: 13px;
     color: #888;
     font-style: italic;
