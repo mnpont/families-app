@@ -3,15 +3,16 @@
  * as a rollback safety net before Phase 0 Step 2's schema migration and
  * backfill run against it.
  *
- * This script was NOT run by the assistant -- the session it was written in
- * has no Supabase credentials at all. Run it yourself:
+ * Reads credentials from .env.local (same file the app itself uses) via
+ * ./loadEnv, or from the environment if you'd rather export them into the
+ * shell yourself:
  *
- *   VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... npx tsx scripts/exportWordsBackup.ts
+ *   npm run backup:words
  *
- * (or `export $(cat .env.local | xargs)` first if you keep them there).
  * Commit the resulting CSV, or note elsewhere where you're keeping it --
  * either way, do this BEFORE running scripts/backfillToV2Schema.ts live.
  */
+import './loadEnv';
 import { createClient } from '@supabase/supabase-js';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';

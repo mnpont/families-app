@@ -29,7 +29,11 @@
  * This script was written without any Supabase credentials available in
  * that session -- only --source=local --dry-run was actually run. Live
  * runs need to happen in an environment with real credentials.
+ *
+ * Live modes read credentials from .env.local via ./loadEnv (same file the
+ * app itself uses), or from the environment if exported into the shell.
  */
+import './loadEnv';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { preLoadedWords } from '../src/data/preLoadedWords';
 import { detectTranslationLanguage } from '../src/utils/detectTranslationLanguage';
