@@ -547,30 +547,6 @@ body::after {
     gap: 16px;
 }
 
-.flashcard-nav-button {
-    padding: 16px 48px;
-    border: none;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: linear-gradient(135deg, #8E9EFF 0%, #C2E9FB 100%);
-    color: white;
-    box-shadow: 0 4px 20px rgba(142, 158, 255, 0.3);
-    font-family: 'Inter', sans-serif;
-}
-
-.flashcard-nav-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 30px rgba(142, 158, 255, 0.4);
-}
-
-.flashcard-nav-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 .expanded-family {
     width: 100%;
     max-width: 500px;

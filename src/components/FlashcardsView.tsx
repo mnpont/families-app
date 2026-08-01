@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import type { VocabWord } from '../types/vocabWord';
-import { shuffleArray } from '../utils/shuffleArray';
+import { useState } from 'react';
+import { useReviewSession } from '../hooks/useReviewSession';
+import type { Grade, LanguageId } from '../types/models';
 import { Flashcard } from './Flashcard';
 
 interface FlashcardsViewProps {
-  words: VocabWord[];
+  languageId: LanguageId | null;
 }
 
 function highlightWord(sentence: string, targetWord: string | undefined) {
@@ -15,32 +15,19 @@ function highlightWord(sentence: string, targetWord: string | undefined) {
   return parts.map((part, i) => (regex.test(part) ? <strong key={i}>{part}</strong> : part));
 }
 
-export function FlashcardsView({ words }: FlashcardsViewProps) {
-  const [shuffledWords, setShuffledWords] = useState<VocabWord[]>([]);
-  const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
+const GRADE_BUTTONS: { grade: Grade; label: string; variant: 'button-secondary' | 'button-primary' }[] = [
+  { grade: 'again', label: 'Again', variant: 'button-secondary' },
+  { grade: 'hard', label: 'Hard', variant: 'button-secondary' },
+  { grade: 'good', label: 'Good', variant: 'button-primary' },
+  { grade: 'easy', label: 'Easy', variant: 'button-primary' },
+];
+
+export function FlashcardsView({ languageId }: FlashcardsViewProps) {
+  const { cards, loading, submitting, submitGrade } = useReviewSession(languageId);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [animationClass, setAnimationClass] = useState<'' | 'next' | 'prev'>('');
   const [showExample, setShowExample] = useState(false);
 
-  useEffect(() => {
-    if (words.length > 0) {
-      setShuffledWords(shuffleArray(words));
-      setCurrentFlashcardIndex(0);
-      setIsFlipped(false);
-    }
-  }, [words]);
-
-  if (words.length === 0) {
-    return (
-      <div className="empty-state">
-        <div className="empty-state-title">No Words Yet</div>
-        <div className="empty-state-text">Add some words to start practicing</div>
-      </div>
-    );
-  }
-
-  if (shuffledWords.length === 0) {
+  if (loading) {
     return (
       <div className="empty-state">
         <div className="empty-state-title">Loading...</div>
@@ -48,51 +35,23 @@ export function FlashcardsView({ words }: FlashcardsViewProps) {
     );
   }
 
-  const handleNextFlashcard = () => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    setIsFlipped(false);
-    setShowExample(false);
-    setAnimationClass('next');
-
-    setTimeout(() => {
-      setCurrentFlashcardIndex((prev) => (prev + 1) % shuffledWords.length);
-      setAnimationClass('');
-      setIsAnimating(false);
-    }, 300);
-  };
-
-  const handlePrevFlashcard = () => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    setIsFlipped(false);
-    setShowExample(false);
-    setAnimationClass('prev');
-
-    setTimeout(() => {
-      setCurrentFlashcardIndex((prev) => (prev - 1 + shuffledWords.length) % shuffledWords.length);
-      setAnimationClass('');
-      setIsAnimating(false);
-    }, 300);
-  };
-
-  const currentWord = shuffledWords[currentFlashcardIndex];
-
-  let currentCardClass = 'flashcard ';
-  if (animationClass === 'next') currentCardClass += 'slide-out-right';
-  else if (animationClass === 'prev') currentCardClass += 'slide-out-left';
-  else currentCardClass += 'top';
-
-  let incomingWord: VocabWord | undefined;
-  let incomingClass = '';
-  if (animationClass) {
-    const newIndex =
-      animationClass === 'next'
-        ? (currentFlashcardIndex + 1) % shuffledWords.length
-        : (currentFlashcardIndex - 1 + shuffledWords.length) % shuffledWords.length;
-    incomingWord = shuffledWords[newIndex];
-    incomingClass = `flashcard ${animationClass === 'next' ? 'slide-in-left' : 'slide-in-right'}`;
+  if (cards.length === 0) {
+    return (
+      <div className="empty-state">
+        <div className="empty-state-title">All Caught Up</div>
+        <div className="empty-state-text">Nothing due for review right now</div>
+      </div>
+    );
   }
+
+  const currentCard = cards[0];
+
+  const handleGrade = async (grade: Grade) => {
+    if (submitting) return;
+    await submitGrade(currentCard.id, grade);
+    setIsFlipped(false);
+    setShowExample(false);
+  };
 
   return (
     <div className="flashcard-container">
@@ -104,39 +63,33 @@ export function FlashcardsView({ words }: FlashcardsViewProps) {
           </div>
         </div>
 
-        <Flashcard
-          word={currentWord}
-          className={currentCardClass}
-          isFlipped={isFlipped}
-          onClick={() => !isAnimating && setIsFlipped(!isFlipped)}
-        />
-
-        {animationClass && <Flashcard word={incomingWord} className={incomingClass} />}
+        <Flashcard word={currentCard} className="flashcard top" isFlipped={isFlipped} onClick={() => setIsFlipped(!isFlipped)} />
       </div>
 
-      {currentWord?.exampleSentence && (
+      {currentCard.exampleSentence && (
         <div className={`example-reveal ${showExample ? 'revealed' : ''}`} onClick={() => setShowExample(!showExample)}>
           {!showExample ? (
             <div className="example-reveal-hint">Tap to see example</div>
           ) : (
             <div className="example-reveal-content">
-              <div className="example-reveal-text">{highlightWord(currentWord.exampleSentence.text, currentWord.text)}</div>
-              {currentWord.exampleSentence.translationText && (
-                <div className="example-reveal-translation">{currentWord.exampleSentence.translationText}</div>
+              <div className="example-reveal-text">{highlightWord(currentCard.exampleSentence.text, currentCard.text)}</div>
+              {currentCard.exampleSentence.translationText && (
+                <div className="example-reveal-translation">{currentCard.exampleSentence.translationText}</div>
               )}
             </div>
           )}
         </div>
       )}
 
-      <div className="flashcard-nav">
-        <button className="flashcard-nav-button" onClick={handlePrevFlashcard} disabled={isAnimating}>
-          Back
-        </button>
-        <button className="flashcard-nav-button" onClick={handleNextFlashcard} disabled={isAnimating}>
-          Next
-        </button>
-      </div>
+      {isFlipped && (
+        <div className="flashcard-nav">
+          {GRADE_BUTTONS.map(({ grade, label, variant }) => (
+            <button key={grade} className={`button ${variant}`} onClick={() => handleGrade(grade)} disabled={submitting}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -26,7 +26,6 @@ export default function App() {
   const selectedLanguageName = languages.find((l) => l.id === selectedLanguageId)?.name ?? '';
 
   const {
-    words,
     families,
     familyNames,
     syncStatus,
@@ -99,7 +98,7 @@ export default function App() {
           />
         )}
 
-        {view === 'flashcards' && <FlashcardsView words={words} />}
+        {view === 'flashcards' && <FlashcardsView languageId={selectedLanguageId} />}
       </div>
 
       {showAddModal && (

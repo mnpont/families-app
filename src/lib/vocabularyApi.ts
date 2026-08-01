@@ -1,8 +1,10 @@
 import { supabase } from './supabaseClient';
 import { OWNER_ID } from '../constants/owner';
 import { detectTranslationLanguage } from '../utils/detectTranslationLanguage';
-import type { Language, LanguageId } from '../types/models';
+import { defaultScheduleState, type ScheduleResult } from '../utils/scheduler';
+import type { Grade, Language, LanguageId } from '../types/models';
 import type { VocabWord } from '../types/vocabWord';
+import type { ReviewCard } from '../types/reviewCard';
 
 /**
  * Data-access layer for the v2 schema (migrations/001-007). Every query is
@@ -150,6 +152,19 @@ export async function createWord(
     .insert({ deck_id: deckId, word_id: word.id, added_at: createdAt });
   if (linkError) throw linkError;
 
+  // Every Word gets a schedule row at creation time so it enters the review
+  // queue immediately (due_at = now), regardless of which path created it.
+  const defaults = defaultScheduleState();
+  const { error: scheduleError } = await supabase.from('word_schedule_state').insert({
+    word_id: word.id,
+    user_id: OWNER_ID,
+    interval_days: defaults.intervalDays,
+    ease_factor: defaults.easeFactor,
+    due_at: createdAt,
+    review_count: defaults.reviewCount,
+  });
+  if (scheduleError) throw scheduleError;
+
   return {
     id: word.id,
     languageId,
@@ -225,4 +240,98 @@ export async function deleteDeckAndWords(name: string, languageId: LanguageId): 
 
   const { error: deleteDeckError } = await supabase.from('decks').delete().eq('id', deck.id);
   if (deleteDeckError) throw deleteDeckError;
+}
+
+/** How many never-before-reviewed words a single review session introduces, on top of however many are already due. */
+const NEW_WORD_CAP = 10;
+
+interface ScheduleRow {
+  interval_days: number;
+  ease_factor: number;
+  review_count: number;
+  due_at: string;
+  words: WordRow;
+}
+
+const REVIEW_CARD_SELECT =
+  'interval_days, ease_factor, review_count, due_at, words!inner(id, language_id, text, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text))';
+
+function toReviewCard(row: ScheduleRow): ReviewCard {
+  return {
+    // Deck membership isn't queried here -- it's irrelevant to review and
+    // would need an extra join through deck_words/decks that nothing in
+    // the review UI renders.
+    ...toVocabWord(row.words, ''),
+    schedule: { intervalDays: row.interval_days, easeFactor: row.ease_factor, reviewCount: row.review_count },
+  };
+}
+
+/**
+ * A review session's card batch: every word already due for repeat review
+ * (review_count > 0, due_at <= now), plus up to `newWordCap` words that have
+ * never been reviewed yet (review_count === 0) -- not a shuffle of the
+ * entire deck (docs/v2-plan.md Phase 1 Step 2).
+ *
+ * Note: a lapsed card (graded "again") resets review_count to 0, same as
+ * textbook SM-2's repetition count -- so right after a lapse it temporarily
+ * shares the new-word cap bucket with words that have truly never been
+ * reviewed, rather than getting its own "relearning" queue. That's a
+ * deliberate simplification for this step; a dedicated relearning queue is
+ * future work if the new-word cap turns out to starve lapsed cards in
+ * practice.
+ */
+export async function fetchReviewSession(
+  languageId: LanguageId,
+  now: Date = new Date(),
+  newWordCap: number = NEW_WORD_CAP
+): Promise<ReviewCard[]> {
+  const nowIso = now.toISOString();
+
+  const [{ data: due, error: dueError }, { data: fresh, error: freshError }] = await Promise.all([
+    supabase
+      .from('word_schedule_state')
+      .select(REVIEW_CARD_SELECT)
+      .eq('user_id', OWNER_ID)
+      .eq('words.language_id', languageId)
+      .gt('review_count', 0)
+      .lte('due_at', nowIso)
+      .order('due_at', { ascending: true }),
+    supabase
+      .from('word_schedule_state')
+      .select(REVIEW_CARD_SELECT)
+      .eq('user_id', OWNER_ID)
+      .eq('words.language_id', languageId)
+      .eq('review_count', 0)
+      .lte('due_at', nowIso)
+      .order('due_at', { ascending: true })
+      .limit(newWordCap),
+  ]);
+
+  if (dueError) throw dueError;
+  if (freshError) throw freshError;
+
+  const dueRows = (due ?? []) as unknown as ScheduleRow[];
+  const freshRows = (fresh ?? []) as unknown as ScheduleRow[];
+
+  return [...dueRows, ...freshRows].map(toReviewCard);
+}
+
+/** Records a graded review: appends to the ReviewLog history and writes the scheduler's output as the word's new live state. */
+export async function submitReview(wordId: number, grade: Grade, next: ScheduleResult, now: Date = new Date()): Promise<void> {
+  const { error: logError } = await supabase
+    .from('review_log')
+    .insert({ word_id: wordId, user_id: OWNER_ID, reviewed_at: now.toISOString(), grade, mode: 'recognition' });
+  if (logError) throw logError;
+
+  const { error: stateError } = await supabase
+    .from('word_schedule_state')
+    .update({
+      interval_days: next.intervalDays,
+      ease_factor: next.easeFactor,
+      due_at: next.dueAt.toISOString(),
+      review_count: next.reviewCount,
+    })
+    .eq('word_id', wordId)
+    .eq('user_id', OWNER_ID);
+  if (stateError) throw stateError;
 }
