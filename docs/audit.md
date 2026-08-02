@@ -29,8 +29,8 @@ There is no `package.json`, no `src/` tree, no build step, no test suite, and no
   1. **Supabase (Postgres-as-a-service)** is the primary remote store. The client is instantiated inline with a hardcoded project URL and anon key directly in the bundle (`index.html:1133-1136`):
      ```js
      const supabase = window.supabase.createClient(
-         'https://ethrzcogkfrlhqwgqplg.supabase.co',
-         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+         'https://<project-ref>.supabase.co',
+         '<anon-key>'
      );
      ```
      A single table `words` is used with columns `id, german, english, family, date_added, example_sentence_de, example_sentence_en, user_id` (inferred from the select/insert/update calls at `index.html:3162-3179`, `3196-3203`, `3275-3290`). `user_id` is always sent as `null` (`index.html:3202`, `3217`) — there is no auth/user scoping; it's a single shared vocabulary for anyone who loads the page.
