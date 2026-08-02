@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { lookupTranslation } from '../lib/lookupApi';
+import type { LanguageId } from '../types/models';
 
 interface AddWordModalProps {
+  languageId: LanguageId | null;
   languageName: string;
   familyNames: string[];
   onClose: () => void;
@@ -12,12 +15,13 @@ type AddModalMode = 'word' | 'family';
 
 const CREATE_NEW_FAMILY = '__create_new_family__';
 
-export function AddWordModal({ languageName, familyNames, onClose, onAddWord, onAddFamily }: AddWordModalProps) {
+export function AddWordModal({ languageId, languageName, familyNames, onClose, onAddWord, onAddFamily }: AddWordModalProps) {
   const [mode, setMode] = useState<AddModalMode>('word');
   const [wordText, setWordText] = useState('');
   const [translationText, setTranslationText] = useState('');
   const [newFamilyName, setNewFamilyName] = useState('');
   const [selectedFamily, setSelectedFamily] = useState(familyNames[0] ?? '');
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   const submitWord = () => {
     if (!selectedFamily) return;
@@ -39,6 +43,28 @@ export function AddWordModal({ languageName, familyNames, onClose, onAddWord, on
       return;
     }
     setSelectedFamily(value);
+  };
+
+  const handleLookup = async () => {
+    if (!languageId || !wordText.trim() || isLookingUp) return;
+
+    setIsLookingUp(true);
+    try {
+      const suggestion = await lookupTranslation(wordText.trim(), languageId);
+      if (suggestion) {
+        // A suggestion, not a locked-in value -- it lands in the same
+        // editable field manual typing uses, so it can be freely corrected
+        // before Add Word is pressed.
+        setTranslationText(suggestion);
+      } else {
+        alert('No suggestion found for that word. You can still enter the translation yourself.');
+      }
+    } catch (error) {
+      console.error('Error looking up word:', error);
+      alert('Lookup failed. Please enter the translation yourself.');
+    } finally {
+      setIsLookingUp(false);
+    }
   };
 
   return (
@@ -67,6 +93,18 @@ export function AddWordModal({ languageName, familyNames, onClose, onAddWord, on
             onKeyDown={(e) => e.key === 'Enter' && mode === 'family' && submitFamily()}
           />
         </div>
+        {mode === 'word' && (
+          <div className="input-group">
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={handleLookup}
+              disabled={!wordText.trim() || isLookingUp}
+            >
+              {isLookingUp ? 'Looking up...' : "Look up translation (don't know it?)"}
+            </button>
+          </div>
+        )}
         <div
           className="input-group"
           style={{

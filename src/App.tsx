@@ -103,6 +103,7 @@ export default function App() {
 
       {showAddModal && (
         <AddWordModal
+          languageId={selectedLanguageId}
           languageName={selectedLanguageName}
           familyNames={familyNames}
           onClose={() => setShowAddModal(false)}
