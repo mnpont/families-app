@@ -89,10 +89,78 @@ body::after {
     letter-spacing: -0.3px;
 }
 
-.language-selector {
-    width: auto;
-    max-width: 140px;
-    margin-left: 12px;
+.header-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-title--clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.language-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    transition: max-width 0.35s ease, opacity 0.3s ease, transform 0.35s ease;
+}
+
+.language-bar--closed {
+    max-width: 0;
+    opacity: 0;
+    transform: translateX(10px);
+    pointer-events: none;
+}
+
+.language-bar--open {
+    max-width: 220px;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.language-bar-add {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
+    color: white;
+    font-size: 16px;
+    line-height: 26px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(255, 154, 158, 0.3);
+}
+
+.language-pills {
+    display: flex;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
+    padding: 3px;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.language-pill {
+    padding: 7px 13px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: #999;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.language-pill.active {
+    background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 154, 158, 0.3);
 }
 
 .add-button {
@@ -370,6 +438,60 @@ body::after {
     box-shadow: 0 2px 8px rgba(255, 154, 158, 0.3);
 }
 
+.family-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.family-chip {
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.04);
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.family-chip.active {
+    background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
+    color: white;
+}
+
+.family-chip-new {
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #999;
+    border: 1.5px dashed rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+}
+
+.family-chip-new-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.family-chip-new-input-row .input-field {
+    flex: 1;
+    padding: 9px 13px;
+    border: 2px solid rgba(255, 154, 158, 0.4);
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.family-chip-new-confirm {
+    flex: none;
+    padding: 0 14px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
 .flashcard-container {
     display: flex;
     flex-direction: column;
@@ -399,6 +521,20 @@ body::after {
 .flashcard.top {
     z-index: 2;
     transform: translateX(0) translateY(0);
+    transition: transform 0.32s ease, opacity 0.3s ease;
+}
+
+/* Post-grade motion: lifted off the stack, then swung to the back and faded --
+   see FlashcardsView.tsx's handleGrade for the timed sequence. */
+.flashcard.top.deck-left {
+    transform: translate(-72px, -6px) scale(0.97) rotate(-9deg);
+    pointer-events: none;
+}
+
+.flashcard.top.deck-back {
+    transform: translate(8px, 8px) scale(0.9) rotate(-2deg);
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* The shadow card behind */
@@ -440,6 +576,35 @@ body::after {
 
 .flashcard-back {
     transform: rotateY(180deg);
+    flex-direction: column;
+    gap: 12px;
+    padding: 30px 40px;
+}
+
+.flashcard-divider {
+    width: 36px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.flashcard-example {
+    font-size: 14px;
+    font-style: italic;
+    color: #444;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.flashcard-example strong {
+    color: #e8677d;
+    font-weight: 700;
+}
+
+.flashcard-example-translation {
+    font-size: 12px;
+    color: #999;
+    font-style: italic;
+    text-align: center;
 }
 
 .flashcard-text {
@@ -516,6 +681,17 @@ body::after {
     justify-content: center;
     align-items: center;
     gap: 16px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+/* Reserves the row's space before flip so nothing above ever jumps when it appears. */
+.flashcard-nav--pending {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
 }
 
 .expanded-family {
@@ -845,65 +1021,6 @@ body::after {
 
 .word-example-translation {
     color: #999;
-}
-
-.example-reveal {
-    margin-top: 16px;
-    padding: 14px 18px;
-    background: rgba(255, 154, 158, 0.06);
-    border: 1px solid rgba(255, 154, 158, 0.15);
-    border-radius: 12px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.example-reveal:active {
-    transform: scale(0.98);
-}
-
-.example-reveal-hint {
-    font-size: 14px;
-    color: #aaa;
-    letter-spacing: 0.3px;
-}
-
-.example-reveal-content {
-    animation: revealBlur 0.4s ease-out forwards;
-}
-
-@keyframes revealBlur {
-    from {
-        filter: blur(6px);
-        opacity: 0.3;
-    }
-    to {
-        filter: blur(0);
-        opacity: 1;
-    }
-}
-
-.example-reveal-text {
-    font-size: 16px;
-    color: #333;
-    line-height: 1.5;
-    margin-bottom: 4px;
-}
-
-.example-reveal-text strong {
-    color: #e8677d;
-    font-weight: 700;
-}
-
-.example-reveal-translation {
-    font-size: 13px;
-    color: #888;
-    font-style: italic;
-    line-height: 1.4;
 }
 
 .empty-state {

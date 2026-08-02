@@ -17,6 +17,7 @@ export type View = 'families' | 'flashcards';
 export default function App() {
   const [view, setView] = useState<View>('families');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalMode, setAddModalMode] = useState<'word' | 'family'>('word');
   const [expandedFamily, setExpandedFamily] = useState<string | null>(null);
   const [showFamilySelector, setShowFamilySelector] = useState<number | null>(null);
   const [editingWord, setEditingWord] = useState<VocabWord | null>(null);
@@ -37,6 +38,16 @@ export default function App() {
     saveFamilyName,
     deleteFamily,
   } = useVocabulary(selectedLanguageId);
+
+  const handleOpenAddWord = () => {
+    setAddModalMode('word');
+    setShowAddModal(true);
+  };
+
+  const handleOpenAddFamily = () => {
+    setAddModalMode('family');
+    setShowAddModal(true);
+  };
 
   const handleAddWord = async (text: string, translationText: string, familyName: string) => {
     const success = await addWord(text, translationText, familyName);
@@ -85,7 +96,8 @@ export default function App() {
         languages={languages}
         selectedLanguageId={selectedLanguageId}
         onLanguageChange={setSelectedLanguageId}
-        onAddClick={() => setShowAddModal(true)}
+        onAddClick={handleOpenAddWord}
+        onAddFamilyClick={handleOpenAddFamily}
       />
 
       <div className="content">
@@ -106,6 +118,7 @@ export default function App() {
           languageId={selectedLanguageId}
           languageName={selectedLanguageName}
           familyNames={familyNames}
+          initialMode={addModalMode}
           onClose={() => setShowAddModal(false)}
           onAddWord={handleAddWord}
           onAddFamily={handleAddFamily}

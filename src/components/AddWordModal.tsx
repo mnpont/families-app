@@ -7,6 +7,7 @@ interface AddWordModalProps {
   languageId: LanguageId | null;
   languageName: string;
   familyNames: string[];
+  initialMode?: AddModalMode;
   onClose: () => void;
   onAddWord: (text: string, translationText: string, familyName: string) => void;
   onAddFamily: (name: string) => void;
@@ -14,15 +15,23 @@ interface AddWordModalProps {
 
 type AddModalMode = 'word' | 'family';
 
-const CREATE_NEW_FAMILY = '__create_new_family__';
-
-export function AddWordModal({ languageId, languageName, familyNames, onClose, onAddWord, onAddFamily }: AddWordModalProps) {
-  const [mode, setMode] = useState<AddModalMode>('word');
+export function AddWordModal({
+  languageId,
+  languageName,
+  familyNames,
+  initialMode = 'word',
+  onClose,
+  onAddWord,
+  onAddFamily,
+}: AddWordModalProps) {
+  const [mode, setMode] = useState<AddModalMode>(initialMode);
   const [wordText, setWordText] = useState('');
   const [translationText, setTranslationText] = useState('');
   const [newFamilyName, setNewFamilyName] = useState('');
   const [selectedFamily, setSelectedFamily] = useState(familyNames[0] ?? '');
   const [isLookingUp, setIsLookingUp] = useState(false);
+  const [newFamilyChipOpen, setNewFamilyChipOpen] = useState(false);
+  const [newFamilyChipText, setNewFamilyChipText] = useState('');
 
   const submitWord = () => {
     if (!selectedFamily) return;
@@ -37,13 +46,12 @@ export function AddWordModal({ languageId, languageName, familyNames, onClose, o
     setMode('word');
   };
 
-  const handleFamilySelectChange = (value: string) => {
-    if (value === CREATE_NEW_FAMILY) {
-      const name = prompt('Enter new family name:');
-      if (name && name.trim()) setSelectedFamily(name.trim());
-      return;
-    }
-    setSelectedFamily(value);
+  const confirmNewFamilyChip = () => {
+    const name = newFamilyChipText.trim();
+    if (!name) return;
+    setSelectedFamily(name);
+    setNewFamilyChipOpen(false);
+    setNewFamilyChipText('');
   };
 
   const handleLookup = async () => {
@@ -134,24 +142,36 @@ export function AddWordModal({ languageId, languageName, familyNames, onClose, o
           }}
         >
           <label className="input-label">Family</label>
-          <select
-            className="input-field"
-            value={selectedFamily}
-            onChange={(e) => handleFamilySelectChange(e.target.value)}
-            tabIndex={mode === 'word' ? 0 : -1}
-          >
-            {familyNames.length === 0 && (
-              <option value="" disabled>
-                No families yet
-              </option>
-            )}
+          <div className="family-chip-row">
             {familyNames.map((name) => (
-              <option key={name} value={name}>
+              <div
+                key={name}
+                className={`family-chip ${selectedFamily === name ? 'active' : ''}`}
+                onClick={() => setSelectedFamily(name)}
+              >
                 {name}
-              </option>
+              </div>
             ))}
-            <option value={CREATE_NEW_FAMILY}>+ Create New Family</option>
-          </select>
+            <div className="family-chip-new" onClick={() => setNewFamilyChipOpen((open) => !open)}>
+              + New
+            </div>
+          </div>
+          {newFamilyChipOpen && (
+            <div className="family-chip-new-input-row">
+              <input
+                type="text"
+                className="input-field"
+                value={newFamilyChipText}
+                onChange={(e) => setNewFamilyChipText(e.target.value)}
+                placeholder="e.g. Colors"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && confirmNewFamilyChip()}
+              />
+              <button type="button" className="button button-primary family-chip-new-confirm" onClick={confirmNewFamilyChip}>
+                Add
+              </button>
+            </div>
+          )}
         </div>
         <div className="button-group">
           <button className="button button-secondary" onClick={onClose}>
