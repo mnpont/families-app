@@ -74,13 +74,6 @@ export default function App() {
     setShowFamilySelector(null);
   };
 
-  const handleCreateNewFamily = (wordId: number) => {
-    const familyName = prompt('Enter new family name:');
-    if (familyName && familyName.trim()) {
-      handleMoveToFamily(wordId, familyName.trim());
-    }
-  };
-
   const handleSaveEditWord = async (wordId: number, text: string, translationText: string) => {
     const success = await saveEditWord(wordId, text, translationText);
     if (success) setEditingWord(null);
@@ -149,11 +142,11 @@ export default function App() {
 
       {showFamilySelector !== null && expandedFamily && (
         <FamilySelectorModal
+          wordText={(families[expandedFamily] ?? []).find((word) => word.id === showFamilySelector)?.text ?? ''}
           familyNames={familyNames}
           currentFamily={expandedFamily}
           onClose={() => setShowFamilySelector(null)}
           onSelectFamily={(name) => handleMoveToFamily(showFamilySelector, name)}
-          onCreateNewFamily={() => handleCreateNewFamily(showFamilySelector)}
         />
       )}
 
