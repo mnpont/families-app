@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { VocabWord } from '../types/vocabWord';
 import { FamiliesIcon } from './icons/FamiliesIcon';
 import { PencilIcon } from './icons/PencilIcon';
@@ -26,75 +26,153 @@ export function ExpandedFamilyModal({
   onDeleteWord,
 }: ExpandedFamilyModalProps) {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [confirmingDeleteWordId, setConfirmingDeleteWordId] = useState<number | null>(null);
+  const [confirmingDeleteFamily, setConfirmingDeleteFamily] = useState(false);
+  const [showBottomFade, setShowBottomFade] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const checkOverflow = () => setShowBottomFade(el.scrollHeight > el.clientHeight + 1);
+    checkOverflow();
+
+    const observer = new ResizeObserver(checkOverflow);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [words, isEditMode, confirmingDeleteFamily]);
+
+  const exitEditMode = () => {
+    setIsEditMode(false);
+    setConfirmingDeleteWordId(null);
+    setConfirmingDeleteFamily(false);
+  };
 
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="expanded-family" onClick={(e) => e.stopPropagation()}>
-        <div className="expanded-family-header">
-          <div className="expanded-family-title-section">
-            <div className="expanded-family-title">{familyName}</div>
-            {isEditMode && (
-              <>
-                <button
-                  className="family-action-button edit-name"
-                  onClick={() => onEditFamilyName(familyName)}
-                  title="Rename family"
-                >
-                  <PencilIcon />
-                </button>
-                <button
-                  className="family-action-button delete-family"
-                  onClick={() => onDeleteFamily(familyName)}
-                  title="Delete family"
-                >
-                  <DeleteIcon />
-                </button>
-              </>
-            )}
+      <div className="expanded-family" ref={scrollRef} onClick={(e) => e.stopPropagation()}>
+        <button className="expanded-family-close" onClick={onClose} title="Close">
+          <DeleteIcon />
+        </button>
+
+        <div className="expanded-family-title">{familyName}</div>
+
+        {!isEditMode && (
+          <div className="expanded-family-meta">
+            <div className="expanded-family-count-pill">
+              {words.length} word{words.length === 1 ? '' : 's'}
+            </div>
+            <button className="edit-toggle-pill" onClick={() => setIsEditMode(true)}>
+              Edit
+            </button>
           </div>
-          <button
-            className={`edit-button ${isEditMode ? 'active' : ''}`}
-            onClick={() => setIsEditMode(!isEditMode)}
-            title="Edit mode"
-          >
-            <PencilIcon />
-          </button>
-        </div>
-        {words.map((word) => (
-          <div key={word.id} className={`word-list-item ${isEditMode ? 'edit-mode' : ''}`}>
-            {isEditMode && (
+        )}
+
+        {isEditMode && confirmingDeleteFamily && (
+          <div className="delete-confirm-bar family-delete-confirm">
+            <span>Delete "{familyName}"?</span>
+            <div className="delete-confirm-actions">
+              <button className="delete-confirm-cancel" onClick={() => setConfirmingDeleteFamily(false)}>
+                Cancel
+              </button>
               <button
-                className="word-family-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenFamilySelector(word.id);
+                className="delete-confirm-delete"
+                onClick={() => {
+                  setConfirmingDeleteFamily(false);
+                  onDeleteFamily(familyName);
                 }}
               >
-                <FamiliesIcon />
+                Delete
               </button>
-            )}
-            <div className="word-text">{word.text}</div>
-            <div className="word-translation">{word.translation?.text}</div>
-            {word.exampleSentence && !isEditMode && (
-              <div className="word-example">
-                <span className="word-example-text">{word.exampleSentence.text}</span>
-                {word.exampleSentence.translationText && (
-                  <span className="word-example-translation"> — {word.exampleSentence.translationText}</span>
-                )}
-              </div>
-            )}
-            {isEditMode && (
-              <div className="word-action-buttons">
-                <button className="action-button edit" onClick={() => onEditWord(word)}>
-                  <PencilIcon />
-                </button>
-                <button className="action-button delete" onClick={() => onDeleteWord(word.id)}>
-                  <DeleteIcon />
-                </button>
-              </div>
-            )}
+            </div>
           </div>
-        ))}
+        )}
+
+        {isEditMode && !confirmingDeleteFamily && (
+          <div className="expanded-family-actions">
+            <button className="family-action-pill rename" onClick={() => onEditFamilyName(familyName)}>
+              <PencilIcon />
+              Rename
+            </button>
+            <button className="family-action-pill delete" onClick={() => setConfirmingDeleteFamily(true)}>
+              Delete family
+            </button>
+            <button className="edit-toggle-pill active" onClick={exitEditMode}>
+              Editing
+            </button>
+          </div>
+        )}
+
+        {words.map((word) => {
+          if (isEditMode && confirmingDeleteWordId === word.id) {
+            return (
+              <div key={word.id} className="delete-confirm-bar word-delete-confirm">
+                <span>Delete "{word.text}"?</span>
+                <div className="delete-confirm-actions">
+                  <button className="delete-confirm-cancel" onClick={() => setConfirmingDeleteWordId(null)}>
+                    Cancel
+                  </button>
+                  <button
+                    className="delete-confirm-delete"
+                    onClick={() => {
+                      setConfirmingDeleteWordId(null);
+                      onDeleteWord(word.id);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={word.id} className={`word-list-item ${isEditMode ? 'edit-mode' : ''}`}>
+              {isEditMode && (
+                <button
+                  className="word-family-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenFamilySelector(word.id);
+                  }}
+                >
+                  <FamiliesIcon />
+                </button>
+              )}
+              {isEditMode ? (
+                <div className="word-edit-line">
+                  {word.text} <span className="word-edit-translation">{word.translation?.text}</span>
+                </div>
+              ) : (
+                <>
+                  <div className="word-text">{word.text}</div>
+                  <div className="word-translation">{word.translation?.text}</div>
+                  {word.exampleSentence && (
+                    <div className="word-example">
+                      <span className="word-example-text">{word.exampleSentence.text}</span>
+                      {word.exampleSentence.translationText && (
+                        <span className="word-example-translation"> — {word.exampleSentence.translationText}</span>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+              {isEditMode && (
+                <div className="word-action-buttons">
+                  <button className="action-button edit" onClick={() => onEditWord(word)}>
+                    <PencilIcon />
+                  </button>
+                  <button className="action-button delete" onClick={() => setConfirmingDeleteWordId(word.id)}>
+                    <DeleteIcon />
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {showBottomFade && <div className="expanded-family-fade" />}
       </div>
     </div>
   );
