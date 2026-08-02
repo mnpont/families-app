@@ -11,9 +11,10 @@ interface AddWordModalProps {
   onClose: () => void;
   onAddWord: (text: string, translationText: string, familyName: string) => void;
   onAddFamily: (name: string) => void;
+  onAddLanguage: (id: string, name: string) => void;
 }
 
-type AddModalMode = 'word' | 'family';
+type AddModalMode = 'word' | 'family' | 'language';
 
 export function AddWordModal({
   languageId,
@@ -23,6 +24,7 @@ export function AddWordModal({
   onClose,
   onAddWord,
   onAddFamily,
+  onAddLanguage,
 }: AddWordModalProps) {
   const [mode, setMode] = useState<AddModalMode>(initialMode);
   const [wordText, setWordText] = useState('');
@@ -32,6 +34,8 @@ export function AddWordModal({
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [newFamilyChipOpen, setNewFamilyChipOpen] = useState(false);
   const [newFamilyChipText, setNewFamilyChipText] = useState('');
+  const [newLanguageName, setNewLanguageName] = useState('');
+  const [newLanguageCode, setNewLanguageCode] = useState('');
 
   const submitWord = () => {
     if (!selectedFamily) return;
@@ -43,6 +47,14 @@ export function AddWordModal({
   const submitFamily = () => {
     onAddFamily(newFamilyName);
     setNewFamilyName('');
+    setMode('word');
+  };
+
+  const submitLanguage = () => {
+    if (!newLanguageName.trim() || !newLanguageCode.trim()) return;
+    onAddLanguage(newLanguageCode, newLanguageName);
+    setNewLanguageName('');
+    setNewLanguageCode('');
     setMode('word');
   };
 
@@ -76,6 +88,9 @@ export function AddWordModal({
     }
   };
 
+  const submit = mode === 'word' ? submitWord : mode === 'family' ? submitFamily : submitLanguage;
+  const submitLabel = mode === 'word' ? 'Add Word' : mode === 'family' ? 'Add Family' : 'Add Language';
+
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -83,14 +98,17 @@ export function AddWordModal({
           <button className={`modal-toggle-option ${mode === 'word' ? 'active' : ''}`} onClick={() => setMode('word')}>
             Add Word
           </button>
-          <button
-            className={`modal-toggle-option ${mode === 'family' ? 'active' : ''}`}
-            onClick={() => setMode('family')}
-          >
+          <button className={`modal-toggle-option ${mode === 'family' ? 'active' : ''}`} onClick={() => setMode('family')}>
             Add Family
           </button>
+          <button className={`modal-toggle-option ${mode === 'language' ? 'active' : ''}`} onClick={() => setMode('language')}>
+            Add Language
+          </button>
         </div>
-        <div className="input-group">
+        <div
+          className="input-group"
+          style={{ display: mode === 'language' ? 'none' : 'block' }}
+        >
           <label className="input-label">{mode === 'word' ? `New ${languageName} word` : 'Family Name'}</label>
           <input
             type="text"
@@ -98,7 +116,7 @@ export function AddWordModal({
             value={mode === 'word' ? wordText : newFamilyName}
             onChange={(e) => (mode === 'word' ? setWordText(e.target.value) : setNewFamilyName(e.target.value))}
             placeholder={mode === 'word' ? 'Type the word' : 'e.g. Colors, Furniture...'}
-            autoFocus
+            autoFocus={mode !== 'language'}
             onKeyDown={(e) => e.key === 'Enter' && mode === 'family' && submitFamily()}
           />
         </div>
@@ -108,6 +126,7 @@ export function AddWordModal({
             opacity: mode === 'word' ? 1 : 0,
             pointerEvents: mode === 'word' ? 'auto' : 'none',
             transition: 'opacity 0.3s ease',
+            display: mode === 'language' ? 'none' : 'block',
           }}
         >
           <label className="input-label">Translation</label>
@@ -139,6 +158,7 @@ export function AddWordModal({
             opacity: mode === 'word' ? 1 : 0,
             pointerEvents: mode === 'word' ? 'auto' : 'none',
             transition: 'opacity 0.3s ease',
+            display: mode === 'language' ? 'none' : 'block',
           }}
         >
           <label className="input-label">Family</label>
@@ -173,12 +193,39 @@ export function AddWordModal({
             </div>
           )}
         </div>
+        {mode === 'language' && (
+          <>
+            <div className="input-group">
+              <label className="input-label">Language name</label>
+              <input
+                type="text"
+                className="input-field"
+                value={newLanguageName}
+                onChange={(e) => setNewLanguageName(e.target.value)}
+                placeholder="e.g. Italian"
+                autoFocus
+              />
+            </div>
+            <div className="input-group">
+              <label className="input-label">Language code (ISO 639-1)</label>
+              <input
+                type="text"
+                className="input-field"
+                value={newLanguageCode}
+                onChange={(e) => setNewLanguageCode(e.target.value)}
+                placeholder="e.g. it"
+                maxLength={5}
+                onKeyDown={(e) => e.key === 'Enter' && submitLanguage()}
+              />
+            </div>
+          </>
+        )}
         <div className="button-group">
           <button className="button button-secondary" onClick={onClose}>
             Cancel
           </button>
-          <button className="button button-primary" onClick={mode === 'word' ? submitWord : submitFamily}>
-            {mode === 'word' ? 'Add Word' : 'Add Family'}
+          <button className="button button-primary" onClick={submit}>
+            {submitLabel}
           </button>
         </div>
       </div>

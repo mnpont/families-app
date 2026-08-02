@@ -7,7 +7,6 @@ import { NavBar } from './components/NavBar';
 import { FamiliesView } from './components/FamiliesView';
 import { FlashcardsView } from './components/FlashcardsView';
 import { AddWordModal } from './components/AddWordModal';
-import { AddLanguageModal } from './components/AddLanguageModal';
 import { ExpandedFamilyModal } from './components/ExpandedFamilyModal';
 import { FamilySelectorModal } from './components/FamilySelectorModal';
 import { EditWordModal } from './components/EditWordModal';
@@ -23,7 +22,6 @@ export default function App() {
   const [showFamilySelector, setShowFamilySelector] = useState<number | null>(null);
   const [editingWord, setEditingWord] = useState<VocabWord | null>(null);
   const [editingFamilyName, setEditingFamilyName] = useState<string | null>(null);
-  const [showAddLanguageModal, setShowAddLanguageModal] = useState(false);
 
   const { languages, selectedLanguageId, setSelectedLanguageId, addLanguage } = useLanguages();
   const selectedLanguageName = languages.find((l) => l.id === selectedLanguageId)?.name ?? '';
@@ -63,7 +61,7 @@ export default function App() {
 
   const handleAddLanguage = async (id: string, name: string) => {
     const success = await addLanguage(id, name);
-    if (success) setShowAddLanguageModal(false);
+    if (success) setShowAddModal(false);
   };
 
   const handleDeleteFamily = async (name: string) => {
@@ -105,7 +103,6 @@ export default function App() {
         onLanguageChange={setSelectedLanguageId}
         onAddClick={handleOpenAddWord}
         onAddFamilyClick={handleOpenAddFamily}
-        onAddLanguageClick={() => setShowAddLanguageModal(true)}
       />
 
       <div className="content">
@@ -130,6 +127,7 @@ export default function App() {
           onClose={() => setShowAddModal(false)}
           onAddWord={handleAddWord}
           onAddFamily={handleAddFamily}
+          onAddLanguage={handleAddLanguage}
         />
       )}
 
@@ -174,10 +172,6 @@ export default function App() {
           onClose={() => setEditingFamilyName(null)}
           onSave={handleSaveFamilyName}
         />
-      )}
-
-      {showAddLanguageModal && (
-        <AddLanguageModal onClose={() => setShowAddLanguageModal(false)} onAddLanguage={handleAddLanguage} />
       )}
 
       <NavBar view={view} onViewChange={setView} />

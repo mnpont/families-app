@@ -13,7 +13,6 @@ interface HeaderProps {
   onLanguageChange: (languageId: LanguageId) => void;
   onAddClick: () => void;
   onAddFamilyClick: () => void;
-  onAddLanguageClick: () => void;
 }
 
 export function Header({
@@ -24,46 +23,31 @@ export function Header({
   onLanguageChange,
   onAddClick,
   onAddFamilyClick,
-  onAddLanguageClick,
 }: HeaderProps) {
   const [languageBarOpen, setLanguageBarOpen] = useState(false);
-  const isFlashcardsView = view === 'flashcards';
 
   return (
     <div className="header">
       <SyncStatusIndicator status={syncStatus} />
       <div className="header-title-group">
-        <div
-          className={`app-title ${isFlashcardsView ? 'app-title--clickable' : ''}`}
-          onClick={() => isFlashcardsView && setLanguageBarOpen((open) => !open)}
-        >
+        <div className="app-title app-title--clickable" onClick={() => setLanguageBarOpen((open) => !open)}>
           Families
         </div>
-        {isFlashcardsView ? (
-          <div className={`language-bar ${languageBarOpen ? 'language-bar--open' : ''}`}>
-            <div className="language-bar-content">
-              <LanguageSelector
-                languages={languages}
-                selectedLanguageId={selectedLanguageId}
-                onChange={(languageId) => {
-                  onLanguageChange(languageId);
-                  setLanguageBarOpen(false);
-                }}
-                onAddLanguageClick={onAddLanguageClick}
-              />
-              <button className="language-bar-add" onClick={onAddFamilyClick} aria-label="Add family">
-                +
-              </button>
-            </div>
+        <div className={`language-bar ${languageBarOpen ? 'language-bar--open' : ''}`}>
+          <div className="language-bar-content">
+            <LanguageSelector
+              languages={languages}
+              selectedLanguageId={selectedLanguageId}
+              onChange={(languageId) => {
+                onLanguageChange(languageId);
+                setLanguageBarOpen(false);
+              }}
+            />
+            <button className="language-bar-add" onClick={onAddFamilyClick} aria-label="Add family">
+              +
+            </button>
           </div>
-        ) : (
-          <LanguageSelector
-            languages={languages}
-            selectedLanguageId={selectedLanguageId}
-            onChange={onLanguageChange}
-            onAddLanguageClick={onAddLanguageClick}
-          />
-        )}
+        </div>
       </div>
       {view === 'families' && (
         <button className="add-button" onClick={onAddClick}>
