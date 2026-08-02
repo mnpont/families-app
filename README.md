@@ -1,6 +1,15 @@
 # families-app
 
-Vocabulary learning app. Supports any language present in the `languages` table (see `docs/v2-plan.md` for the v2 redesign this came out of).
+A vocabulary-learning app: add words in any language, group them into categories ("families"), and review them with a spaced-repetition flashcard scheduler.
+
+- **Multi-language** — not hardcoded to one target language; language pairs live in the data model, not the code.
+- **Spaced repetition** — an SM-2-style scheduler drives the review queue, tuned to avoid the "stuck at the floor" ease-factor problem in textbook SM-2 (see `src/utils/scheduler.ts`).
+- **Word lookup assist** — optional inline translation suggestions while adding a word, always editable before saving.
+- **Synced storage** — words, families, and review history persist to Supabase (Postgres + row-level security), not just local state.
+
+## Tech stack
+
+React + TypeScript + Vite, backed by Supabase. Deployed on [Vercel](https://vercel.com), auto-deployed from `main`.
 
 ## Development
 
@@ -12,15 +21,14 @@ npm run dev
 
 `npm run build` type-checks and produces a production build in `dist/`.
 
-## Deployment
+## Data model
 
-Hosted on [Vercel](https://vercel.com), auto-deployed from `main` (zero-config: Vercel detects the Vite build and serves `dist/`). Needs the same two env vars as local dev (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) set in the Vercel project's Environment Variables settings.
+The schema (languages, words, translations, decks, spaced-repetition state) is defined as an ordered set of SQL migrations in `migrations/`, with the rationale for each step in `migrations/README.md`.
 
-The project previously used GitHub Pages' classic "deploy from a branch" mechanism, which only publishes files as-is with no build step -- that silently broke the live site once the app moved off a single static `index.html` (Phase 0). Vercel replaces that deploy path entirely.
+## Project history
 
-## Docs
+This started as a single static `index.html` file and was restructured into the current Vite/TypeScript project alongside a redesign of the data model to support multiple languages and spaced repetition. The docs behind that redesign are kept in `docs/`:
 
-- `docs/audit.md` — codebase audit that preceded the v2 redesign
-- `docs/learning-science.md` — vocabulary-acquisition research behind the v2 feature backlog
-- `docs/v2-plan.md` — the v2 data model and feature plan
-- `migrations/` — SQL schema for the v2 data model (applied through `011_add_review_rls_policies.sql`)
+- `docs/audit.md` — audit of the original codebase that motivated the redesign
+- `docs/learning-science.md` — spaced-repetition research behind the review feature
+- `docs/v2-plan.md` — the resulting data model and feature plan
