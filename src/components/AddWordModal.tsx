@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { lookupTranslation } from '../lib/lookupApi';
+import { SearchIcon } from './icons/SearchIcon';
 import type { LanguageId } from '../types/models';
 
 interface AddWordModalProps {
@@ -93,18 +94,6 @@ export function AddWordModal({ languageId, languageName, familyNames, onClose, o
             onKeyDown={(e) => e.key === 'Enter' && mode === 'family' && submitFamily()}
           />
         </div>
-        {mode === 'word' && (
-          <div className="input-group">
-            <button
-              type="button"
-              className="button button-secondary"
-              onClick={handleLookup}
-              disabled={!wordText.trim() || isLookingUp}
-            >
-              {isLookingUp ? 'Looking up...' : "Look up translation (don't know it?)"}
-            </button>
-          </div>
-        )}
         <div
           className="input-group"
           style={{
@@ -114,15 +103,27 @@ export function AddWordModal({ languageId, languageName, familyNames, onClose, o
           }}
         >
           <label className="input-label">Translation</label>
-          <input
-            type="text"
-            className="input-field"
-            value={translationText}
-            onChange={(e) => setTranslationText(e.target.value)}
-            placeholder="Type the translation"
-            tabIndex={mode === 'word' ? 0 : -1}
-            onKeyDown={(e) => e.key === 'Enter' && submitWord()}
-          />
+          <div className="input-field-wrapper">
+            <input
+              type="text"
+              className="input-field"
+              value={translationText}
+              onChange={(e) => setTranslationText(e.target.value)}
+              placeholder="Type the translation, or look it up"
+              tabIndex={mode === 'word' ? 0 : -1}
+              onKeyDown={(e) => e.key === 'Enter' && submitWord()}
+            />
+            <button
+              type="button"
+              className="input-icon-button"
+              onClick={handleLookup}
+              disabled={!wordText.trim() || isLookingUp}
+              title="Look up a suggested translation"
+              tabIndex={mode === 'word' ? 0 : -1}
+            >
+              <SearchIcon />
+            </button>
+          </div>
         </div>
         <div
           className="input-group"

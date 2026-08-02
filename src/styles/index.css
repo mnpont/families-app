@@ -260,6 +260,45 @@ body::after {
     font-family: 'Inter', sans-serif;
 }
 
+.input-field-wrapper {
+    position: relative;
+}
+
+.input-field-wrapper .input-field {
+    padding-right: 48px;
+}
+
+.input-icon-button {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(142, 158, 255, 0.15);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.input-icon-button:hover:not(:disabled) {
+    background: rgba(142, 158, 255, 0.3);
+}
+
+.input-icon-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.input-icon-button svg {
+    width: 18px;
+    height: 18px;
+}
+
 .input-field:focus {
     outline: none;
     border-color: #FF9A9E;
