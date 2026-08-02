@@ -15,6 +15,7 @@ SQL schema for the v2 language-agnostic data model (`docs/v2-plan.md` Section 1)
 `words_legacy` is left in place afterward (not dropped) as a further rollback net alongside the CSV backup.
 
 8. Apply `009_create_review_log.sql` through `012_add_review_delete_policies.sql` (Phase 1 Step 2 — spaced repetition). `010`'s backfill gives every already-existing word a fresh, immediately-due schedule row, so nothing is silently excluded from the review queue for predating the table. `012` closes a gap `011` left open -- see that file's comments.
+9. Apply `013_restrict_target_languages.sql` whenever you want to scope the language picker down to a subset of `languages` (e.g. German/French only) without touching existing translation data.
 
 ## Files
 
@@ -30,6 +31,7 @@ SQL schema for the v2 language-agnostic data model (`docs/v2-plan.md` Section 1)
 10. `010_create_word_schedule_state.sql` — live per-word/per-learner scheduler state (interval, ease factor, due date, repetition count), plus a one-time backfill giving every pre-existing word an immediately-due schedule row.
 11. `011_add_review_rls_policies.sql` — RLS for both new tables, scoped to the hardcoded owner (no public read, unlike `words`/`decks`).
 12. `012_add_review_delete_policies.sql` — adds the DELETE policies `011` should have included, matching `008`'s established precedent of granting delete rights on every table reachable by a Word's cascade delete.
+13. `013_restrict_target_languages.sql` — adds `languages.is_target` so the picker can be scoped to a subset (e.g. German/French) without deleting English/Spanish, which every existing translation's `language_id` still points to (`src/utils/detectTranslationLanguage.ts` only ever returns `'en'`/`'es'`); also removes Italian outright, since nothing references it.
 
 ## Related scripts (`/scripts`)
 

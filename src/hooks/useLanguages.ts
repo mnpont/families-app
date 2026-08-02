@@ -37,5 +37,27 @@ export function useLanguages() {
     localStorage.setItem(SELECTED_LANGUAGE_KEY, languageId);
   };
 
-  return { languages, selectedLanguageId, setSelectedLanguageId, loading };
+  const addLanguage = async (id: LanguageId, name: string): Promise<boolean> => {
+    const trimmedId = id.trim().toLowerCase();
+    const trimmedName = name.trim();
+    if (!trimmedId || !trimmedName) return false;
+
+    if (languages.some((l) => l.id === trimmedId)) {
+      alert('A language with this code already exists.');
+      return false;
+    }
+
+    try {
+      await vocabularyApi.createLanguage(trimmedId, trimmedName);
+      setLanguages((current) => [...current, { id: trimmedId, name: trimmedName }].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedLanguageId(trimmedId);
+      return true;
+    } catch (error) {
+      console.error('Error adding language:', error);
+      alert('Failed to add language. Please try again.');
+      return false;
+    }
+  };
+
+  return { languages, selectedLanguageId, setSelectedLanguageId, addLanguage, loading };
 }

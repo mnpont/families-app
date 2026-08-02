@@ -54,9 +54,18 @@ function toVocabWord(word: WordRow, deckName: string): VocabWord {
 }
 
 export async function fetchLanguages(): Promise<Language[]> {
-  const { data, error } = await supabase.from('languages').select('id, name').order('name', { ascending: true });
+  const { data, error } = await supabase
+    .from('languages')
+    .select('id, name')
+    .eq('is_target', true)
+    .order('name', { ascending: true });
   if (error) throw error;
   return data ?? [];
+}
+
+export async function createLanguage(id: LanguageId, name: string): Promise<void> {
+  const { error } = await supabase.from('languages').insert({ id, name });
+  if (error) throw error;
 }
 
 export async function fetchVocabulary(languageId: LanguageId): Promise<VocabularySnapshot> {

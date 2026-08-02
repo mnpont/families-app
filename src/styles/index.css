@@ -100,25 +100,38 @@ body::after {
     user-select: none;
 }
 
+/* Grid-column collapse (0fr -> 1fr) instead of a guessed max-width -- scales
+   to however many language pills are actually rendered, no clipping. */
 .language-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    overflow: hidden;
-    transition: max-width 0.35s ease, opacity 0.3s ease, transform 0.35s ease;
-}
-
-.language-bar--closed {
-    max-width: 0;
+    display: grid;
+    grid-template-columns: 0fr;
     opacity: 0;
     transform: translateX(10px);
     pointer-events: none;
+    transition: grid-template-columns 0.35s ease, opacity 0.3s ease, transform 0.35s ease;
 }
 
 .language-bar--open {
-    max-width: 220px;
+    grid-template-columns: 1fr;
     opacity: 1;
     transform: translateX(0);
+    pointer-events: auto;
+}
+
+.language-bar-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    /* If there are more pills than the header has room for, scroll instead
+       of clipping the add-language/add-family buttons out of reach. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+
+.language-bar-content::-webkit-scrollbar {
+    display: none;
 }
 
 .language-bar-add {
@@ -161,6 +174,31 @@ body::after {
     background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
     color: white;
     box-shadow: 0 2px 8px rgba(255, 154, 158, 0.3);
+}
+
+.language-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.language-add-button {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.04);
+    color: #999;
+    font-size: 16px;
+    line-height: 26px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.language-add-button:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: #666;
 }
 
 .add-button {
