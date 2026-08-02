@@ -89,6 +89,12 @@ body::after {
     letter-spacing: -0.3px;
 }
 
+.language-selector {
+    width: auto;
+    max-width: 140px;
+    margin-left: 12px;
+}
+
 .add-button {
     position: absolute;
     right: 20px;
@@ -254,6 +260,45 @@ body::after {
     font-family: 'Inter', sans-serif;
 }
 
+.input-field-wrapper {
+    position: relative;
+}
+
+.input-field-wrapper .input-field {
+    padding-right: 48px;
+}
+
+.input-icon-button {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(142, 158, 255, 0.15);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.input-icon-button:hover:not(:disabled) {
+    background: rgba(142, 158, 255, 0.3);
+}
+
+.input-icon-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.input-icon-button svg {
+    width: 18px;
+    height: 18px;
+}
+
 .input-field:focus {
     outline: none;
     border-color: #FF9A9E;
@@ -361,74 +406,6 @@ body::after {
     z-index: 1;
     transform: translateX(8px) translateY(8px);
     pointer-events: none;
-}
-
-/* Next animation: slide right and fade out */
-.flashcard.slide-out-right {
-    z-index: 3;
-    animation: slideOutRight 0.3s ease-in forwards;
-}
-
-@keyframes slideOutRight {
-    from {
-        transform: translateX(0) translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(450px) translateY(0);
-        opacity: 0;
-    }
-}
-
-/* Next animation: new card slides in from left */
-.flashcard.slide-in-left {
-    z-index: 2;
-    animation: slideInLeft 0.3s ease-out forwards;
-}
-
-@keyframes slideInLeft {
-    from {
-        transform: translateX(-450px) translateY(0);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0) translateY(0);
-        opacity: 1;
-    }
-}
-
-/* Back animation: slide left and fade out */
-.flashcard.slide-out-left {
-    z-index: 3;
-    animation: slideOutLeft 0.3s ease-in forwards;
-}
-
-@keyframes slideOutLeft {
-    from {
-        transform: translateX(0) translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(-450px) translateY(0);
-        opacity: 0;
-    }
-}
-
-/* Back animation: new card slides in from right */
-.flashcard.slide-in-right {
-    z-index: 2;
-    animation: slideInRight 0.3s ease-out forwards;
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(450px) translateY(0);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0) translateY(0);
-        opacity: 1;
-    }
 }
 
 .flashcard-inner {
@@ -539,30 +516,6 @@ body::after {
     justify-content: center;
     align-items: center;
     gap: 16px;
-}
-
-.flashcard-nav-button {
-    padding: 16px 48px;
-    border: none;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: linear-gradient(135deg, #8E9EFF 0%, #C2E9FB 100%);
-    color: white;
-    box-shadow: 0 4px 20px rgba(142, 158, 255, 0.3);
-    font-family: 'Inter', sans-serif;
-}
-
-.flashcard-nav-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 30px rgba(142, 158, 255, 0.4);
-}
-
-.flashcard-nav-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .expanded-family {
@@ -866,14 +819,14 @@ body::after {
     box-shadow: 0 4px 12px rgba(142, 158, 255, 0.3);
 }
 
-.word-german {
+.word-text {
     font-size: 18px;
     font-weight: 600;
     color: #1a1a1a;
     margin-bottom: 4px;
 }
 
-.word-english {
+.word-translation {
     font-size: 14px;
     color: #666;
 }
@@ -886,11 +839,11 @@ body::after {
     line-height: 1.4;
 }
 
-.word-example-de {
+.word-example-text {
     color: #777;
 }
 
-.word-example-en {
+.word-example-translation {
     color: #999;
 }
 
@@ -934,19 +887,19 @@ body::after {
     }
 }
 
-.example-reveal-de {
+.example-reveal-text {
     font-size: 16px;
     color: #333;
     line-height: 1.5;
     margin-bottom: 4px;
 }
 
-.example-reveal-de strong {
+.example-reveal-text strong {
     color: #e8677d;
     font-weight: 700;
 }
 
-.example-reveal-en {
+.example-reveal-translation {
     font-size: 13px;
     color: #888;
     font-style: italic;

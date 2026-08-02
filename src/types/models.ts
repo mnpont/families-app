@@ -1,11 +1,9 @@
 /**
- * Language-agnostic v2 data model, per docs/v2-plan.md Section 1.
- *
- * NOT YET WIRED UP: the app still runs against the legacy schema
- * (see src/types/legacyWord.ts) until the Phase 2 data cutover. These
- * types mirror the SQL schema in /migrations and exist so the migration
- * has a typed target to build toward, and so Phase 1 code can start
- * importing real types instead of `any`.
+ * Language-agnostic v2 data model, per docs/v2-plan.md Section 1. These
+ * types mirror the SQL schema in /migrations. src/lib/vocabularyApi.ts reads
+ * and writes against them directly; src/types/legacyWord.ts only survives
+ * for the one-time backfill script (scripts/backfillToV2Schema.ts) and its
+ * bundled seed data.
  */
 
 /** ISO 639-1 code, e.g. "de", "en", "es", "fr". */
@@ -66,4 +64,46 @@ export interface DeckWord {
   deckId: number;
   wordId: number;
   addedAt: string;
+}
+
+/** Confidence self-rating a learner gives after attempting recall. */
+export type Grade = 'again' | 'hard' | 'good' | 'easy';
+
+/**
+ * Which kind of review produced a ReviewLog row. Only 'recognition' (see
+ * the word, recall the meaning) is implemented -- 'production' (typing) and
+ * 'cloze' are Phase 2 (docs/v2-plan.md), but the column exists now so they
+ * don't need a second migration later.
+ */
+export type ReviewMode = 'recognition' | 'production' | 'cloze';
+
+/**
+ * Append-only history of every review attempt -- never updated, only
+ * inserted. `userId` exists from day one (defaulted to the single
+ * hardcoded owner, see src/constants/owner.ts) exactly like Deck.ownerId,
+ * so real multi-user support later is a data backfill, not a migration.
+ */
+export interface ReviewLog {
+  id: number;
+  wordId: number;
+  userId: string;
+  reviewedAt: string;
+  grade: Grade;
+  mode: ReviewMode;
+}
+
+/**
+ * Live per-word, per-learner SM-2 scheduler state (src/utils/scheduler.ts).
+ * Kept separate from ReviewLog (state vs. history) so the scheduler can be
+ * recomputed from history without mutating it. `reviewCount` is the
+ * consecutive-success repetition count (SM-2's "n"): it resets to 0 on
+ * "again" rather than counting total reviews ever.
+ */
+export interface WordScheduleState {
+  wordId: number;
+  userId: string;
+  intervalDays: number;
+  easeFactor: number;
+  dueAt: string;
+  reviewCount: number;
 }

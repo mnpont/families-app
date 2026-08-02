@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import type { LegacyWord } from '../types/legacyWord';
+import type { VocabWord } from '../types/vocabWord';
 import { FamiliesIcon } from './icons/FamiliesIcon';
 import { PencilIcon } from './icons/PencilIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 
 interface ExpandedFamilyModalProps {
   familyName: string;
-  words: LegacyWord[];
+  words: VocabWord[];
   onClose: () => void;
   onEditFamilyName: (oldName: string) => void;
   onDeleteFamily: (name: string) => void;
   onOpenFamilySelector: (wordId: number) => void;
-  onEditWord: (word: LegacyWord) => void;
+  onEditWord: (word: VocabWord) => void;
   onDeleteWord: (wordId: number) => void;
 }
 
@@ -73,12 +73,14 @@ export function ExpandedFamilyModal({
                 <FamiliesIcon />
               </button>
             )}
-            <div className="word-german">{word.german}</div>
-            <div className="word-english">{word.english}</div>
-            {word.exampleSentenceDe && !isEditMode && (
+            <div className="word-text">{word.text}</div>
+            <div className="word-translation">{word.translation?.text}</div>
+            {word.exampleSentence && !isEditMode && (
               <div className="word-example">
-                <span className="word-example-de">{word.exampleSentenceDe}</span>
-                {word.exampleSentenceEn && <span className="word-example-en"> — {word.exampleSentenceEn}</span>}
+                <span className="word-example-text">{word.exampleSentence.text}</span>
+                {word.exampleSentence.translationText && (
+                  <span className="word-example-translation"> — {word.exampleSentence.translationText}</span>
+                )}
               </div>
             )}
             {isEditMode && (

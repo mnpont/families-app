@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { LegacyWord } from './types/legacyWord';
+import type { VocabWord } from './types/vocabWord';
+import { useLanguages } from './hooks/useLanguages';
 import { useVocabulary } from './hooks/useVocabulary';
 import { Header } from './components/Header';
 import { NavBar } from './components/NavBar';
@@ -18,11 +19,13 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [expandedFamily, setExpandedFamily] = useState<string | null>(null);
   const [showFamilySelector, setShowFamilySelector] = useState<number | null>(null);
-  const [editingWord, setEditingWord] = useState<LegacyWord | null>(null);
+  const [editingWord, setEditingWord] = useState<VocabWord | null>(null);
   const [editingFamilyName, setEditingFamilyName] = useState<string | null>(null);
 
+  const { languages, selectedLanguageId, setSelectedLanguageId } = useLanguages();
+  const selectedLanguageName = languages.find((l) => l.id === selectedLanguageId)?.name ?? '';
+
   const {
-    words,
     families,
     familyNames,
     syncStatus,
@@ -33,10 +36,10 @@ export default function App() {
     moveToFamily,
     saveFamilyName,
     deleteFamily,
-  } = useVocabulary();
+  } = useVocabulary(selectedLanguageId);
 
-  const handleAddWord = async (german: string, english: string) => {
-    const success = await addWord(german, english);
+  const handleAddWord = async (text: string, translationText: string, familyName: string) => {
+    const success = await addWord(text, translationText, familyName);
     if (success) setShowAddModal(false);
   };
 
@@ -62,8 +65,8 @@ export default function App() {
     }
   };
 
-  const handleSaveEditWord = async (wordId: number, german: string, english: string) => {
-    const success = await saveEditWord(wordId, german, english);
+  const handleSaveEditWord = async (wordId: number, text: string, translationText: string) => {
+    const success = await saveEditWord(wordId, text, translationText);
     if (success) setEditingWord(null);
   };
 
@@ -76,7 +79,14 @@ export default function App() {
   return (
     <div className="app-container">
       <div className="orb-accent"></div>
-      <Header view={view} syncStatus={syncStatus} onAddClick={() => setShowAddModal(true)} />
+      <Header
+        view={view}
+        syncStatus={syncStatus}
+        languages={languages}
+        selectedLanguageId={selectedLanguageId}
+        onLanguageChange={setSelectedLanguageId}
+        onAddClick={() => setShowAddModal(true)}
+      />
 
       <div className="content">
         {view === 'families' && (
@@ -88,11 +98,18 @@ export default function App() {
           />
         )}
 
-        {view === 'flashcards' && <FlashcardsView words={words} />}
+        {view === 'flashcards' && <FlashcardsView languageId={selectedLanguageId} />}
       </div>
 
       {showAddModal && (
-        <AddWordModal onClose={() => setShowAddModal(false)} onAddWord={handleAddWord} onAddFamily={handleAddFamily} />
+        <AddWordModal
+          languageId={selectedLanguageId}
+          languageName={selectedLanguageName}
+          familyNames={familyNames}
+          onClose={() => setShowAddModal(false)}
+          onAddWord={handleAddWord}
+          onAddFamily={handleAddFamily}
+        />
       )}
 
       {expandedFamily && (
@@ -122,7 +139,12 @@ export default function App() {
       )}
 
       {editingWord && (
-        <EditWordModal word={editingWord} onClose={() => setEditingWord(null)} onSave={handleSaveEditWord} />
+        <EditWordModal
+          word={editingWord}
+          languageName={selectedLanguageName}
+          onClose={() => setEditingWord(null)}
+          onSave={handleSaveEditWord}
+        />
       )}
 
       {editingFamilyName && (
