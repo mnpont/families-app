@@ -14,7 +14,7 @@ SQL schema for the v2 language-agnostic data model (`docs/v2-plan.md` Section 1)
 
 `words_legacy` is left in place afterward (not dropped) as a further rollback net alongside the CSV backup.
 
-8. Apply `009_create_review_log.sql` through `011_add_review_rls_policies.sql` (Phase 1 Step 2 — spaced repetition). `010`'s backfill gives every already-existing word a fresh, immediately-due schedule row, so nothing is silently excluded from the review queue for predating the table.
+8. Apply `009_create_review_log.sql` through `012_add_review_delete_policies.sql` (Phase 1 Step 2 — spaced repetition). `010`'s backfill gives every already-existing word a fresh, immediately-due schedule row, so nothing is silently excluded from the review queue for predating the table. `012` closes a gap `011` left open -- see that file's comments.
 
 ## Files
 
@@ -29,6 +29,7 @@ SQL schema for the v2 language-agnostic data model (`docs/v2-plan.md` Section 1)
 9. `009_create_review_log.sql` — append-only per-review history feeding the SM-2 scheduler (`src/utils/scheduler.ts`). `user_id` defaults to `OWNER_ID`, same as `decks.owner_id`.
 10. `010_create_word_schedule_state.sql` — live per-word/per-learner scheduler state (interval, ease factor, due date, repetition count), plus a one-time backfill giving every pre-existing word an immediately-due schedule row.
 11. `011_add_review_rls_policies.sql` — RLS for both new tables, scoped to the hardcoded owner (no public read, unlike `words`/`decks`).
+12. `012_add_review_delete_policies.sql` — adds the DELETE policies `011` should have included, matching `008`'s established precedent of granting delete rights on every table reachable by a Word's cascade delete.
 
 ## Related scripts (`/scripts`)
 

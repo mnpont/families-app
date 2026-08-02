@@ -117,7 +117,7 @@ export function AddWordModal({ languageId, languageName, familyNames, onClose, o
               type="button"
               className="input-icon-button"
               onClick={handleLookup}
-              disabled={!wordText.trim() || isLookingUp}
+              disabled={!languageId || !wordText.trim() || isLookingUp}
               title="Look up a suggested translation"
               tabIndex={mode === 'word' ? 0 : -1}
             >
