@@ -15,17 +15,17 @@ export function LanguageSelector({ languages, selectedLanguageId, onChange }: La
   if (languages.length === 0) return null;
 
   return (
-    <select
-      className="input-field language-selector"
-      value={selectedLanguageId ?? ''}
-      onChange={(e) => onChange(e.target.value)}
-      aria-label="Language"
-    >
+    <div className="language-pills" role="group" aria-label="Language">
       {languages.map((language) => (
-        <option key={language.id} value={language.id}>
+        <button
+          key={language.id}
+          type="button"
+          className={`language-pill ${language.id === selectedLanguageId ? 'active' : ''}`}
+          onClick={() => onChange(language.id)}
+        >
           {language.name}
-        </option>
+        </button>
       ))}
-    </select>
+    </div>
   );
 }

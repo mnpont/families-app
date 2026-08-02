@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { SyncStatus } from '../hooks/useVocabulary';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { LanguageSelector } from './LanguageSelector';
@@ -11,14 +12,43 @@ interface HeaderProps {
   selectedLanguageId: LanguageId | null;
   onLanguageChange: (languageId: LanguageId) => void;
   onAddClick: () => void;
+  onAddFamilyClick: () => void;
 }
 
-export function Header({ view, syncStatus, languages, selectedLanguageId, onLanguageChange, onAddClick }: HeaderProps) {
+export function Header({
+  view,
+  syncStatus,
+  languages,
+  selectedLanguageId,
+  onLanguageChange,
+  onAddClick,
+  onAddFamilyClick,
+}: HeaderProps) {
+  const [languageBarOpen, setLanguageBarOpen] = useState(false);
+
   return (
     <div className="header">
       <SyncStatusIndicator status={syncStatus} />
-      <div className="app-title">Families</div>
-      <LanguageSelector languages={languages} selectedLanguageId={selectedLanguageId} onChange={onLanguageChange} />
+      <div className="header-title-group">
+        <div className="app-title app-title--clickable" onClick={() => setLanguageBarOpen((open) => !open)}>
+          Families
+        </div>
+        <div className={`language-bar ${languageBarOpen ? 'language-bar--open' : ''}`}>
+          <div className="language-bar-content">
+            <LanguageSelector
+              languages={languages}
+              selectedLanguageId={selectedLanguageId}
+              onChange={(languageId) => {
+                onLanguageChange(languageId);
+                setLanguageBarOpen(false);
+              }}
+            />
+            <button className="language-bar-add" onClick={onAddFamilyClick} aria-label="Add family">
+              +
+            </button>
+          </div>
+        </div>
+      </div>
       {view === 'families' && (
         <button className="add-button" onClick={onAddClick}>
           +

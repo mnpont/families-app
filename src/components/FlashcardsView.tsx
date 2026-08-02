@@ -1,18 +1,11 @@
 import { useState } from 'react';
 import { useReviewSession } from '../hooks/useReviewSession';
 import type { Grade, LanguageId } from '../types/models';
+import type { ReviewCard } from '../types/reviewCard';
 import { Flashcard } from './Flashcard';
 
 interface FlashcardsViewProps {
   languageId: LanguageId | null;
-}
-
-function highlightWord(sentence: string, targetWord: string | undefined) {
-  if (!targetWord) return sentence;
-  const escaped = targetWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'gi');
-  const parts = sentence.split(regex);
-  return parts.map((part, i) => (regex.test(part) ? <strong key={i}>{part}</strong> : part));
 }
 
 const GRADE_BUTTONS: { grade: Grade; label: string; variant: 'button-secondary' | 'button-primary' }[] = [
@@ -22,10 +15,17 @@ const GRADE_BUTTONS: { grade: Grade; label: string; variant: 'button-secondary' 
   { grade: 'easy', label: 'Easy', variant: 'button-primary' },
 ];
 
+/** Local, purely-presentational stage of the post-grade "sent to the back of the deck" motion. */
+type DeckPhase = 'idle' | 'left' | 'back';
+
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 export function FlashcardsView({ languageId }: FlashcardsViewProps) {
   const { cards, loading, submitting, submitGrade } = useReviewSession(languageId);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [showExample, setShowExample] = useState(false);
+  const [deckPhase, setDeckPhase] = useState<DeckPhase>('idle');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [frozenCard, setFrozenCard] = useState<ReviewCard | null>(null);
 
   if (loading) {
     return (
@@ -45,12 +45,24 @@ export function FlashcardsView({ languageId }: FlashcardsViewProps) {
   }
 
   const currentCard = cards[0];
+  // While animating, keep showing the card being graded -- cards[0] may
+  // already have advanced to the next word once submitGrade resolves.
+  const displayedCard = frozenCard ?? currentCard;
 
   const handleGrade = async (grade: Grade) => {
-    if (submitting) return;
-    await submitGrade(currentCard.id, grade);
+    if (submitting || isAnimating) return;
+    setIsAnimating(true);
+    setFrozenCard(currentCard);
     setIsFlipped(false);
-    setShowExample(false);
+    const gradePromise = submitGrade(currentCard.id, grade);
+    await wait(600);
+    setDeckPhase('left');
+    await wait(240);
+    setDeckPhase('back');
+    await Promise.all([wait(320), gradePromise]);
+    setDeckPhase('idle');
+    setFrozenCard(null);
+    setIsAnimating(false);
   };
 
   return (
@@ -63,33 +75,27 @@ export function FlashcardsView({ languageId }: FlashcardsViewProps) {
           </div>
         </div>
 
-        <Flashcard word={currentCard} className="flashcard top" isFlipped={isFlipped} onClick={() => setIsFlipped(!isFlipped)} />
+        <Flashcard
+          word={displayedCard}
+          className={`flashcard top ${deckPhase !== 'idle' ? `deck-${deckPhase}` : ''}`}
+          isFlipped={isFlipped}
+          onClick={() => !isAnimating && setIsFlipped((flipped) => !flipped)}
+        />
       </div>
 
-      {currentCard.exampleSentence && (
-        <div className={`example-reveal ${showExample ? 'revealed' : ''}`} onClick={() => setShowExample(!showExample)}>
-          {!showExample ? (
-            <div className="example-reveal-hint">Tap to see example</div>
-          ) : (
-            <div className="example-reveal-content">
-              <div className="example-reveal-text">{highlightWord(currentCard.exampleSentence.text, currentCard.text)}</div>
-              {currentCard.exampleSentence.translationText && (
-                <div className="example-reveal-translation">{currentCard.exampleSentence.translationText}</div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {isFlipped && (
-        <div className="flashcard-nav">
-          {GRADE_BUTTONS.map(({ grade, label, variant }) => (
-            <button key={grade} className={`button ${variant}`} onClick={() => handleGrade(grade)} disabled={submitting}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Always in the DOM so grading never shifts anything above it -- only opacity/position change. */}
+      <div className={`flashcard-nav ${!isFlipped ? 'flashcard-nav--pending' : ''}`}>
+        {GRADE_BUTTONS.map(({ grade, label, variant }) => (
+          <button
+            key={grade}
+            className={`button ${variant}`}
+            onClick={() => handleGrade(grade)}
+            disabled={submitting || isAnimating}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
