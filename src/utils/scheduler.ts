@@ -15,6 +15,12 @@ import type { Grade } from '../types/models';
  * small, bounded step (see EASE_DELTA below), so a handful of subsequent
  * good reviews can undo a lapse instead of a card being punished
  * indefinitely for one bad day.
+ *
+ * Interval is also hard-capped at MAX_INTERVAL_DAYS: uncapped, a streak of
+ * "easy" grades compounds fast (ease factor and the easy bonus both push
+ * the same direction), pushing a word out for months. Capping it keeps
+ * every word coming back at least that often, so even "mastered" words
+ * stay in periodic contact.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -22,6 +28,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_EASE_FACTOR = 1.3;
 const MAX_EASE_FACTOR = 3.0;
 const DEFAULT_EASE_FACTOR = 2.5;
+
+/** No word goes longer than this between reviews, no matter how high its ease factor climbs. */
+const MAX_INTERVAL_DAYS = 30;
 
 const EASE_DELTA: Record<Grade, number> = {
   again: -0.2,
@@ -75,6 +84,7 @@ export function schedule(current: ScheduleState, grade: Grade, now: Date = new D
     const multiplier = grade === 'hard' ? HARD_INTERVAL_MULTIPLIER : easeFactor;
     intervalDays = current.intervalDays * multiplier;
     if (grade === 'easy') intervalDays *= EASY_BONUS_MULTIPLIER;
+    intervalDays = Math.min(intervalDays, MAX_INTERVAL_DAYS);
   }
 
   const dueAt = new Date(now.getTime() + intervalDays * DAY_MS);
