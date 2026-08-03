@@ -87,6 +87,12 @@ body::after {
     font-weight: 700;
     font-style: italic;
     letter-spacing: -0.3px;
+    /* The italic swash on the capital letters overhangs its box; without its
+       own compositing layer, Safari can leave a stale-paint trace of it
+       behind while the language bar's collapse animation shifts this
+       centered title left/right each frame. */
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 .header-title-group {
@@ -204,9 +210,6 @@ body::after {
     left: 20px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #666;
 }
 
 .sync-dot {
