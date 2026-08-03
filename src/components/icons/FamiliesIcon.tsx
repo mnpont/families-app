@@ -1,13 +1,12 @@
 export function FamiliesIcon() {
   return (
-    <svg className="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="7" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <circle cx="17" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <circle cx="12" cy="13" r="2.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      <path d="M7 9.5C7 9.5 5 11 5 13C5 15 5 18 7 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M17 9.5C17 9.5 19 11 19 13C19 15 19 18 17 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M12 16C12 16 10 17.5 10 19C10 20.5 10 21 12 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M12 16C12 16 14 17.5 14 19C14 20.5 14 21 12 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <svg className="nav-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 82C12 60 18 50 28 50C38 50 44 60 44 82Z" fill="currentColor" opacity="0.55" />
+      <circle cx="28" cy="32" r="11" fill="currentColor" opacity="0.55" />
+      <path d="M88 82C88 60 82 50 72 50C62 50 56 60 56 82Z" fill="currentColor" opacity="0.55" />
+      <circle cx="72" cy="32" r="11" fill="currentColor" opacity="0.55" />
+      <path d="M22 90C22 66 30 54 50 54C70 54 78 66 78 90Z" fill="currentColor" />
+      <circle cx="50" cy="38" r="14" fill="currentColor" />
     </svg>
   );
 }
