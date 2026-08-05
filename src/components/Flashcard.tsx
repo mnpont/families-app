@@ -1,19 +1,12 @@
 import type { VocabWord } from '../types/vocabWord';
 import { getFontSizeClass } from '../utils/fontSize';
+import { highlightWord } from '../utils/highlightWord';
 
 interface FlashcardProps {
   word: VocabWord | undefined;
   className: string;
   isFlipped?: boolean;
   onClick?: () => void;
-}
-
-function highlightWord(sentence: string, targetWord: string | undefined) {
-  if (!targetWord) return sentence;
-  const escaped = targetWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'gi');
-  const parts = sentence.split(regex);
-  return parts.map((part, i) => (regex.test(part) ? <strong key={i}>{part}</strong> : part));
 }
 
 export function Flashcard({ word, className, isFlipped, onClick }: FlashcardProps) {

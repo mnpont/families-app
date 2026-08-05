@@ -3,6 +3,7 @@ import type { VocabWord } from '../types/vocabWord';
 import { FamiliesIcon } from './icons/FamiliesIcon';
 import { PencilIcon } from './icons/PencilIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
+import { highlightWord } from '../utils/highlightWord';
 
 interface ExpandedFamilyModalProps {
   familyName: string;
@@ -150,7 +151,7 @@ export function ExpandedFamilyModal({
                   <div className="word-translation">{word.translation?.text}</div>
                   {word.exampleSentence && (
                     <div className="word-example">
-                      <span className="word-example-text">{word.exampleSentence.text}</span>
+                      <span className="word-example-text">{highlightWord(word.exampleSentence.text, word.text)}</span>
                       {word.exampleSentence.translationText && (
                         <span className="word-example-translation"> — {word.exampleSentence.translationText}</span>
                       )}
