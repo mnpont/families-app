@@ -1104,6 +1104,11 @@ body::after {
     color: #777;
 }
 
+.word-example-text strong {
+    color: #e8677d;
+    font-weight: 700;
+}
+
 .word-example-translation {
     color: #999;
 }
