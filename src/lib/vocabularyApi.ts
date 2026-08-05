@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { OWNER_ID } from '../constants/owner';
 import { detectTranslationLanguage } from '../utils/detectTranslationLanguage';
 import { defaultScheduleState, type ScheduleResult } from '../utils/scheduler';
+import { resolveGender } from './genderApi';
 import type { Grade, Language, LanguageId } from '../types/models';
 import type { VocabWord } from '../types/vocabWord';
 import type { ReviewCard } from '../types/reviewCard';
@@ -18,6 +19,8 @@ interface WordRow {
   id: number;
   language_id: string;
   text: string;
+  part_of_speech: string | null;
+  gender: string | null;
   created_at: string;
   translations: { id: number; text: string; language_id: string; is_primary: boolean }[];
   example_sentences: { id: number; text: string; translation_text: string | null }[];
@@ -46,6 +49,8 @@ function toVocabWord(word: WordRow, deckName: string): VocabWord {
     id: word.id,
     languageId: word.language_id,
     text: word.text,
+    partOfSpeech: word.part_of_speech,
+    gender: word.gender as VocabWord['gender'],
     translation: translation ? { text: translation.text } : null,
     exampleSentence: example ? { text: example.text, translationText: example.translation_text } : null,
     deckName,
@@ -72,7 +77,9 @@ export async function fetchVocabulary(languageId: LanguageId): Promise<Vocabular
   const [{ data: words, error: wordsError }, { data: decks, error: decksError }] = await Promise.all([
     supabase
       .from('words')
-      .select('id, language_id, text, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text)')
+      .select(
+        'id, language_id, text, part_of_speech, gender, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text)'
+      )
       .eq('language_id', languageId)
       .order('created_at', { ascending: true }),
     supabase
@@ -138,13 +145,15 @@ export async function createWord(
   text: string,
   translationText: string,
   deckName: string,
-  languageId: LanguageId
+  languageId: LanguageId,
+  partOfSpeech: string | null = null
 ): Promise<VocabWord> {
   const createdAt = new Date().toISOString();
+  const gender = await resolveGender(text, languageId, partOfSpeech);
 
   const { data: word, error: wordError } = await supabase
     .from('words')
-    .insert({ language_id: languageId, text, created_at: createdAt })
+    .insert({ language_id: languageId, text, part_of_speech: partOfSpeech, gender, created_at: createdAt })
     .select('id, text, created_at')
     .single();
   if (wordError) throw wordError;
@@ -195,6 +204,8 @@ export async function createWord(
     id: word.id,
     languageId,
     text: word.text,
+    partOfSpeech,
+    gender,
     translation: { text: translationText },
     exampleSentence,
     deckName,
@@ -213,8 +224,19 @@ export async function deleteWord(wordId: number): Promise<void> {
   if (error) throw error;
 }
 
-export async function updateWord(wordId: number, text: string, translationText: string): Promise<void> {
-  const { error: wordError } = await supabase.from('words').update({ text }).eq('id', wordId);
+export async function updateWord(
+  wordId: number,
+  text: string,
+  translationText: string,
+  languageId: LanguageId,
+  partOfSpeech: string | null = null
+): Promise<void> {
+  const gender = await resolveGender(text, languageId, partOfSpeech);
+
+  const { error: wordError } = await supabase
+    .from('words')
+    .update({ text, part_of_speech: partOfSpeech, gender })
+    .eq('id', wordId);
   if (wordError) throw wordError;
 
   const { error: translationError } = await supabase
@@ -280,7 +302,7 @@ interface ScheduleRow {
 }
 
 const REVIEW_CARD_SELECT =
-  'interval_days, ease_factor, review_count, due_at, words!inner(id, language_id, text, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text))';
+  'interval_days, ease_factor, review_count, due_at, words!inner(id, language_id, text, part_of_speech, gender, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text))';
 
 function toReviewCard(row: ScheduleRow): ReviewCard {
   return {

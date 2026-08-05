@@ -53,12 +53,17 @@ export function useVocabulary(languageId: LanguageId | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [languageId]);
 
-  const addWord = async (text: string, translationText: string, deckName: string): Promise<boolean> => {
+  const addWord = async (
+    text: string,
+    translationText: string,
+    deckName: string,
+    partOfSpeech: string | null = null
+  ): Promise<boolean> => {
     if (!languageId || !text.trim() || !translationText.trim() || !deckName.trim()) return false;
 
     try {
       setSyncStatus('syncing');
-      await vocabularyApi.createWord(text.trim(), translationText.trim(), deckName.trim(), languageId);
+      await vocabularyApi.createWord(text.trim(), translationText.trim(), deckName.trim(), languageId, partOfSpeech);
       await reload(languageId);
       return true;
     } catch (error) {
@@ -108,12 +113,17 @@ export function useVocabulary(languageId: LanguageId | null) {
     }
   };
 
-  const saveEditWord = async (wordId: number, text: string, translationText: string): Promise<boolean> => {
+  const saveEditWord = async (
+    wordId: number,
+    text: string,
+    translationText: string,
+    partOfSpeech: string | null = null
+  ): Promise<boolean> => {
     if (!languageId || !text.trim() || !translationText.trim()) return false;
 
     try {
       setSyncStatus('syncing');
-      await vocabularyApi.updateWord(wordId, text.trim(), translationText.trim());
+      await vocabularyApi.updateWord(wordId, text.trim(), translationText.trim(), languageId, partOfSpeech);
       await reload(languageId);
       return true;
     } catch (error) {

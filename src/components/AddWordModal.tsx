@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { lookupTranslation } from '../lib/lookupApi';
 import { SearchIcon } from './icons/SearchIcon';
-import type { LanguageId } from '../types/models';
+import { WORD_TYPES, type LanguageId, type WordType } from '../types/models';
 
 interface AddWordModalProps {
   languageId: LanguageId | null;
@@ -9,7 +9,7 @@ interface AddWordModalProps {
   familyNames: string[];
   initialMode?: AddModalMode;
   onClose: () => void;
-  onAddWord: (text: string, translationText: string, familyName: string) => void;
+  onAddWord: (text: string, translationText: string, familyName: string, partOfSpeech: WordType | null) => void;
   onAddFamily: (name: string) => void;
   onAddLanguage: (id: string, name: string) => void;
 }
@@ -29,6 +29,7 @@ export function AddWordModal({
   const [mode, setMode] = useState<AddModalMode>(initialMode);
   const [wordText, setWordText] = useState('');
   const [translationText, setTranslationText] = useState('');
+  const [wordType, setWordType] = useState<WordType | ''>('');
   const [newFamilyName, setNewFamilyName] = useState('');
   const [selectedFamily, setSelectedFamily] = useState(familyNames[0] ?? '');
   const [isLookingUp, setIsLookingUp] = useState(false);
@@ -39,9 +40,10 @@ export function AddWordModal({
 
   const submitWord = () => {
     if (!selectedFamily) return;
-    onAddWord(wordText, translationText, selectedFamily);
+    onAddWord(wordText, translationText, selectedFamily, wordType || null);
     setWordText('');
     setTranslationText('');
+    setWordType('');
   };
 
   const submitFamily = () => {
@@ -151,6 +153,30 @@ export function AddWordModal({
               <SearchIcon />
             </button>
           </div>
+        </div>
+        <div
+          className="input-group"
+          style={{
+            opacity: mode === 'word' ? 1 : 0,
+            pointerEvents: mode === 'word' ? 'auto' : 'none',
+            transition: 'opacity 0.3s ease',
+            display: mode === 'language' ? 'none' : 'block',
+          }}
+        >
+          <label className="input-label">Word type (optional)</label>
+          <select
+            className="input-field"
+            value={wordType}
+            onChange={(e) => setWordType(e.target.value as WordType | '')}
+            tabIndex={mode === 'word' ? 0 : -1}
+          >
+            <option value="">Not set</option>
+            {WORD_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {type[0].toUpperCase() + type.slice(1)}
+              </option>
+            ))}
+          </select>
         </div>
         <div
           className="input-group"

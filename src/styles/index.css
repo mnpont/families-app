@@ -1068,11 +1068,62 @@ body::after {
     }
 }
 
+.word-list-item.gender-missing {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.25);
+}
+
+.word-text-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
 .word-text {
     font-size: 16px;
     font-weight: 600;
     color: #1a1a1a;
     margin-bottom: 2px;
+}
+
+.word-gender-chip {
+    font: 700 10px/1 'Inter', sans-serif;
+    letter-spacing: 0.3px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+
+.word-gender-chip.fem {
+    color: #e8677d;
+    background: rgba(232, 103, 125, 0.12);
+}
+
+.word-gender-chip.masc {
+    color: #6b7ad1;
+    background: rgba(107, 122, 209, 0.12);
+}
+
+.word-gender-chip.neutr {
+    color: oklch(55% 0.11 165);
+    background: oklch(55% 0.11 165 / 0.12);
+}
+
+.word-gender-chip.plural {
+    color: #7d8590;
+    background: rgba(125, 133, 144, 0.12);
+}
+
+.word-gender-chip.missing {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px dashed #f59e0b;
+    cursor: pointer;
+}
+
+.word-gender-chip.missing:hover {
+    background: rgba(245, 158, 11, 0.2);
 }
 
 .word-translation {

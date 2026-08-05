@@ -4,6 +4,12 @@ import { FamiliesIcon } from './icons/FamiliesIcon';
 import { PencilIcon } from './icons/PencilIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 import { highlightWord } from '../utils/highlightWord';
+import { GENDER_LABELS, GENDER_LANGUAGES } from '../utils/parseGender';
+
+/** Only a noun in a language that marks gender is eligible for a chip -- verbs, adjectives, phrases, and non-gendered languages never show one. */
+function showsGenderChip(word: VocabWord): boolean {
+  return word.partOfSpeech === 'noun' && GENDER_LANGUAGES.includes(word.languageId);
+}
 
 interface ExpandedFamilyModalProps {
   familyName: string;
@@ -128,8 +134,15 @@ export function ExpandedFamilyModal({
             );
           }
 
+          const genderChip = showsGenderChip(word);
+          const genderClass = word.gender ?? 'missing';
+          const genderLabel = word.gender ? GENDER_LABELS[word.gender] : 'gender?';
+
           return (
-            <div key={word.id} className={`word-list-item ${isEditMode ? 'edit-mode' : ''}`}>
+            <div
+              key={word.id}
+              className={`word-list-item ${isEditMode ? 'edit-mode' : ''} ${genderChip && !word.gender ? 'gender-missing' : ''}`}
+            >
               {isEditMode && (
                 <button
                   className="word-family-button"
@@ -147,7 +160,17 @@ export function ExpandedFamilyModal({
                 </div>
               ) : (
                 <>
-                  <div className="word-text">{word.text}</div>
+                  <div className="word-text-row">
+                    <div className="word-text">{word.text}</div>
+                    {genderChip && (
+                      <span
+                        className={`word-gender-chip ${genderClass}`}
+                        {...(!word.gender ? { onClick: () => onEditWord(word), role: 'button', tabIndex: 0 } : {})}
+                      >
+                        {genderLabel}
+                      </span>
+                    )}
+                  </div>
                   <div className="word-translation">{word.translation?.text}</div>
                   {word.exampleSentence && (
                     <div className="word-example">
