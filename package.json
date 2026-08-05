@@ -10,7 +10,9 @@
     "typecheck:scripts": "tsc -p tsconfig.scripts.json",
     "backup:words": "tsx scripts/exportWordsBackup.ts",
     "backfill:dry-run": "tsx scripts/backfillToV2Schema.ts --source=local --dry-run",
-    "backfill:live": "tsx scripts/backfillToV2Schema.ts --source=live"
+    "backfill:live": "tsx scripts/backfillToV2Schema.ts --source=live",
+    "backfill:gender-dry-run": "tsx scripts/backfillWordGender.ts --dry-run",
+    "backfill:gender-live": "tsx scripts/backfillWordGender.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

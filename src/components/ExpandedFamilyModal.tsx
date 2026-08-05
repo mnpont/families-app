@@ -5,10 +5,22 @@ import { PencilIcon } from './icons/PencilIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 import { highlightWord } from '../utils/highlightWord';
 import { GENDER_LABELS, GENDER_LANGUAGES } from '../utils/parseGender';
+import { isGenderEligible } from '../lib/genderApi';
 
-/** Only a noun in a language that marks gender is eligible for a chip -- verbs, adjectives, phrases, and non-gendered languages never show one. */
+/**
+ * A resolved gender is its own proof the word is a noun (genderApi.ts only
+ * ever resolves one via Wikidata's lexicalCategory=noun filter or an
+ * article that's noun-exclusive), so that always shows a chip with no
+ * dependency on part_of_speech having been set by hand -- unless the word
+ * is explicitly tagged as something else, which always wins (isGenderEligible).
+ * The *missing* "gender?" flag is different -- without a resolved gender
+ * there's no automatic signal this is a noun at all, so it only appears
+ * once the word is explicitly tagged as one, to avoid flagging every
+ * verb/adjective as "missing" its gender.
+ */
 function showsGenderChip(word: VocabWord): boolean {
-  return word.partOfSpeech === 'noun' && GENDER_LANGUAGES.includes(word.languageId);
+  if (!GENDER_LANGUAGES.includes(word.languageId) || !isGenderEligible(word.partOfSpeech)) return false;
+  return word.gender !== null || word.partOfSpeech === 'noun';
 }
 
 interface ExpandedFamilyModalProps {

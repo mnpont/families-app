@@ -69,7 +69,14 @@ export async function lookupGender(text: string, languageId: LanguageId): Promis
 
   try {
     const response = await fetch(`${SPARQL_ENDPOINT}?${new URLSearchParams({ query, format: 'json' })}`, {
-      headers: { Accept: 'application/sparql-results+json' },
+      headers: {
+        Accept: 'application/sparql-results+json',
+        // Wikimedia's API etiquette policy 403s requests with no descriptive
+        // User-Agent. Browsers silently ignore this (it's a forbidden header
+        // there, and the browser's own UA already satisfies the policy) --
+        // this only matters for non-browser callers (scripts/backfillWordGender.ts).
+        'User-Agent': 'families-app/1.0 (personal vocabulary tracker; gender lookup)',
+      },
     });
     if (!response.ok) return null;
 
@@ -89,17 +96,33 @@ export async function lookupGender(text: string, languageId: LanguageId): Promis
 }
 
 /**
+ * Whether a word is even a candidate for gender resolution/display: true
+ * when part_of_speech is unset (the common case -- most words are never
+ * explicitly tagged) or explicitly 'noun'. An explicit non-noun tag (verb,
+ * adjective, phrase, other) always wins over anything Wikidata says --
+ * needed because a lemma can coincidentally have an obscure noun sense
+ * Wikidata knows about even when the word was entered as a different part
+ * of speech (e.g. French "manger" is usually the verb "to eat", but also
+ * has a rare masculine noun sense meaning "food").
+ */
+export function isGenderEligible(partOfSpeech: string | null | undefined): boolean {
+  return partOfSpeech == null || partOfSpeech === 'noun';
+}
+
+/**
  * Resolves the gender to store for a word: the free, no-network article
  * parse first, then a live lookup only when the article is missing or
- * ambiguous. Only attempted for nouns in a language that marks gender --
- * everything else resolves to null without a network call.
+ * ambiguous. Deliberately NOT gated on part_of_speech having been filled
+ * in -- requiring that first would just move the "I forgot to fill
+ * something in" problem this exists to solve -- except when it's
+ * explicitly set to something other than 'noun' (see isGenderEligible).
  */
 export async function resolveGender(
   text: string,
   languageId: LanguageId,
-  partOfSpeech: string | null
+  partOfSpeech: string | null = null
 ): Promise<Gender | null> {
-  if (partOfSpeech !== 'noun' || !GENDER_LANGUAGES.includes(languageId)) return null;
+  if (!GENDER_LANGUAGES.includes(languageId) || !isGenderEligible(partOfSpeech)) return null;
 
   const fromArticle = parseGenderFromArticle(text, languageId);
   if (fromArticle && fromArticle !== 'ambiguous') return fromArticle;
