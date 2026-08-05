@@ -174,12 +174,29 @@ export async function createWord(
   });
   if (scheduleError) throw scheduleError;
 
+  let exampleSentence: VocabWord['exampleSentence'] = null;
+  try {
+    // Best-effort: an LLM outage or a missing/rate-limited API key must not
+    // block the word itself from being saved. A gap left here can be swept
+    // up later by the batch-generate-sentences Edge Function.
+    const { data: sentence, error: sentenceError } = await supabase.functions.invoke(
+      'generate-example-sentence',
+      { body: { wordId: word.id } }
+    );
+    if (sentenceError) throw sentenceError;
+    if (sentence?.text) {
+      exampleSentence = { text: sentence.text, translationText: sentence.translationText ?? null };
+    }
+  } catch (error) {
+    console.error(`Error generating example sentence for word ${word.id}:`, error);
+  }
+
   return {
     id: word.id,
     languageId,
     text: word.text,
     translation: { text: translationText },
-    exampleSentence: null,
+    exampleSentence,
     deckName,
     createdAt: word.created_at,
   };
