@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { VocabWord } from './types/vocabWord';
+import type { WordType } from './types/models';
 import { useLanguages } from './hooks/useLanguages';
 import { useVocabulary } from './hooks/useVocabulary';
 import { Header } from './components/Header';
@@ -49,8 +50,8 @@ export default function App() {
     setShowAddModal(true);
   };
 
-  const handleAddWord = async (text: string, translationText: string, familyName: string) => {
-    const success = await addWord(text, translationText, familyName);
+  const handleAddWord = async (text: string, translationText: string, familyName: string, partOfSpeech: WordType | null) => {
+    const success = await addWord(text, translationText, familyName, partOfSpeech);
     if (success) setShowAddModal(false);
   };
 
@@ -74,8 +75,8 @@ export default function App() {
     setShowFamilySelector(null);
   };
 
-  const handleSaveEditWord = async (wordId: number, text: string, translationText: string) => {
-    const success = await saveEditWord(wordId, text, translationText);
+  const handleSaveEditWord = async (wordId: number, text: string, translationText: string, partOfSpeech: WordType | null) => {
+    const success = await saveEditWord(wordId, text, translationText, partOfSpeech);
     if (success) setEditingWord(null);
   };
 

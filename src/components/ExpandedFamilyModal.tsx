@@ -4,6 +4,24 @@ import { FamiliesIcon } from './icons/FamiliesIcon';
 import { PencilIcon } from './icons/PencilIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 import { highlightWord } from '../utils/highlightWord';
+import { GENDER_LABELS, GENDER_LANGUAGES } from '../utils/parseGender';
+import { isGenderEligible } from '../lib/genderApi';
+
+/**
+ * A resolved gender is its own proof the word is a noun (genderApi.ts only
+ * ever resolves one via Wikidata's lexicalCategory=noun filter or an
+ * article that's noun-exclusive), so that always shows a chip with no
+ * dependency on part_of_speech having been set by hand -- unless the word
+ * is explicitly tagged as something else, which always wins (isGenderEligible).
+ * The *missing* "gender?" flag is different -- without a resolved gender
+ * there's no automatic signal this is a noun at all, so it only appears
+ * once the word is explicitly tagged as one, to avoid flagging every
+ * verb/adjective as "missing" its gender.
+ */
+function showsGenderChip(word: VocabWord): boolean {
+  if (!GENDER_LANGUAGES.includes(word.languageId) || !isGenderEligible(word.partOfSpeech)) return false;
+  return word.gender !== null || word.partOfSpeech === 'noun';
+}
 
 interface ExpandedFamilyModalProps {
   familyName: string;
@@ -128,8 +146,15 @@ export function ExpandedFamilyModal({
             );
           }
 
+          const genderChip = showsGenderChip(word);
+          const genderClass = word.gender ?? 'missing';
+          const genderLabel = word.gender ? GENDER_LABELS[word.gender] : 'gender?';
+
           return (
-            <div key={word.id} className={`word-list-item ${isEditMode ? 'edit-mode' : ''}`}>
+            <div
+              key={word.id}
+              className={`word-list-item ${isEditMode ? 'edit-mode' : ''} ${genderChip && !word.gender ? 'gender-missing' : ''}`}
+            >
               {isEditMode && (
                 <button
                   className="word-family-button"
@@ -147,7 +172,17 @@ export function ExpandedFamilyModal({
                 </div>
               ) : (
                 <>
-                  <div className="word-text">{word.text}</div>
+                  <div className="word-text-row">
+                    <div className="word-text">{word.text}</div>
+                    {genderChip && (
+                      <span
+                        className={`word-gender-chip ${genderClass}`}
+                        {...(!word.gender ? { onClick: () => onEditWord(word), role: 'button', tabIndex: 0 } : {})}
+                      >
+                        {genderLabel}
+                      </span>
+                    )}
+                  </div>
                   <div className="word-translation">{word.translation?.text}</div>
                   {word.exampleSentence && (
                     <div className="word-example">

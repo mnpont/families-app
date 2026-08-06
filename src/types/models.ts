@@ -14,12 +14,20 @@ export interface Language {
   name: string;
 }
 
+/** Word-type options offered in Add/Edit Word -- gates which words are eligible for a gender chip (only 'noun'). */
+export const WORD_TYPES = ['noun', 'verb', 'adjective', 'phrase', 'other'] as const;
+export type WordType = (typeof WORD_TYPES)[number];
+
+/** Grammatical gender, or 'plural' for a plural noun form that has no gender of its own (see src/utils/parseGender.ts). */
+export type Gender = 'masc' | 'fem' | 'neutr' | 'plural';
+
 /** A vocabulary item in its own language — not paired to a translation. */
 export interface Word {
   id: number;
   languageId: LanguageId;
   text: string;
   partOfSpeech?: string | null;
+  gender?: Gender | null;
   notes?: string | null;
   createdAt: string;
 }

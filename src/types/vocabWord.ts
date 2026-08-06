@@ -1,4 +1,4 @@
-import type { LanguageId } from './models';
+import type { Gender, LanguageId } from './models';
 
 /**
  * A Word joined with its primary Translation/ExampleSentence and deck name --
@@ -10,6 +10,8 @@ export interface VocabWord {
   id: number;
   languageId: LanguageId;
   text: string;
+  partOfSpeech: string | null;
+  gender: Gender | null;
   translation: { text: string } | null;
   exampleSentence: { text: string; translationText: string | null } | null;
   deckName: string;
