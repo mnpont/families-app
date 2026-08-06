@@ -1,5 +1,5 @@
 import type { Gender, LanguageId } from '../types/models';
-import { GENDER_LANGUAGES, parseGenderFromArticle } from '../utils/parseGender';
+import { GENDER_LANGUAGES, parseGenderFromArticle, stripLeadingArticle } from '../utils/parseGender';
 
 /**
  * Live grammatical-gender/number lookup against Wikidata's Lexeme data --
@@ -38,6 +38,18 @@ interface SparqlBinding {
 }
 
 /**
+ * German nouns are always capitalized grammatically (Wikidata's lemma data
+ * reflects that), but plenty of words get typed casually in lowercase
+ * ("brot"). Force-capitalizing only for German avoids a silent lookup miss
+ * on nothing more than casing -- French common nouns are lowercase by
+ * convention, so this would break a French match instead of fixing one.
+ */
+function normalizeCaseForLookup(word: string, languageId: LanguageId): string {
+  if (languageId !== 'de' || word.length === 0) return word;
+  return word[0].toUpperCase() + word.slice(1);
+}
+
+/**
  * Looks up the grammatical gender of `text` as a noun in `languageId`, or
  * 'plural' if it matches an inflected plural form instead of a lemma
  * (plural nouns don't carry their own gender -- see the "Schulden" case in
@@ -45,7 +57,7 @@ interface SparqlBinding {
  */
 export async function lookupGender(text: string, languageId: LanguageId): Promise<Gender | null> {
   const languageQid = LANGUAGE_QIDS[languageId];
-  const word = escapeForSparqlString(text.trim());
+  const word = escapeForSparqlString(normalizeCaseForLookup(text.trim(), languageId));
   if (!languageQid || !word) return null;
 
   const query = `SELECT ?genderLabel ?isPlural WHERE {
@@ -127,5 +139,5 @@ export async function resolveGender(
   const fromArticle = parseGenderFromArticle(text, languageId);
   if (fromArticle && fromArticle !== 'ambiguous') return fromArticle;
 
-  return lookupGender(text, languageId);
+  return lookupGender(stripLeadingArticle(text, languageId), languageId);
 }

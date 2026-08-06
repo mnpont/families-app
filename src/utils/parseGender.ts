@@ -30,6 +30,33 @@ export function parseGenderFromArticle(text: string, languageId: LanguageId): Ar
   return articles[firstWord] ?? null;
 }
 
+const ARTICLE_WORDS: Partial<Record<LanguageId, string[]>> = {
+  de: ['der', 'die', 'das'],
+  fr: ['le', 'la', 'les'],
+};
+
+/**
+ * Strips a recognized leading article off `text`, e.g. "die Verwaltung" ->
+ * "Verwaltung". Needed before a live gender lookup (src/lib/genderApi.ts):
+ * Wikidata's lemma is just the bare noun, so a lookup for the un-stripped
+ * text (article included) never matches anything.
+ */
+export function stripLeadingArticle(text: string, languageId: LanguageId): string {
+  const trimmed = text.trim();
+  const articles = ARTICLE_WORDS[languageId];
+  if (!articles) return trimmed;
+
+  if (languageId === 'fr' && /^l['’]/i.test(trimmed)) {
+    return trimmed.slice(trimmed.search(/['’]/) + 1).trim();
+  }
+
+  const spaceIndex = trimmed.indexOf(' ');
+  if (spaceIndex === -1) return trimmed;
+
+  const firstWord = trimmed.slice(0, spaceIndex).toLowerCase();
+  return articles.includes(firstWord) ? trimmed.slice(spaceIndex + 1).trim() : trimmed;
+}
+
 export const GENDER_LABELS: Record<Gender, string> = {
   masc: 'masc.',
   fem: 'fem.',
