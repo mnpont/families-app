@@ -98,25 +98,63 @@ The single biggest cost-reducer already in place: the LLM-generation pattern (Ed
 
 ---
 
+## Part 3 — Two Constraints That Cut Across All 12: Modality and Proficiency
+
+Parts 1–2 evaluated each method as if every learner faced it the same way. Two real constraints change that, and both are cheap to state precisely because the app's data model already scopes everything by `languageId` — proficiency, in particular, isn't a single number for "the learner," it's a per-language fact (this project's own case: German B1+, French A1).
+
+### 3.1 Text-only scope, for now
+
+Three of the 12 depend on a modality this phase explicitly excludes: **1.3 Listening-based recall** (needs synthesized audio), **1.4 Speaking/pronunciation practice** (needs speech recognition), and **1.12 Dual-coding image association** (needs sourced images). None of that changes their research backing or their complexity rating in Part 2 — they're simply out of scope for this pass, not ruled out permanently. That leaves **9 text-only candidates** to actually sequence from: 1.1, 1.2, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10, 1.11.
+
+### 3.2 Proficiency is per-language, not per-learner
+
+Because every word, deck, and review session already carries a `languageId`, the natural home for a proficiency setting is the same place — not a single app-wide "skill level," which would be actively wrong the moment someone (or some family member) is learning two languages at different stages. The concrete shape:
+
+- **Storage:** a small new table, e.g. `language_level(language_id, owner_id, level)`, following the exact owner-scoping precedent already established by `decks.owner_id` (migration `006`) and `review_log.user_id` (migration `009`) — same shape, same rationale, nothing novel. `level` can be as simple as an integer (1-5) or a CEFR string; either is a one-column addition.
+- **Surface:** a slider on the future practice screen, next to the language selector, read/written through a couple of API calls in the same style as `fetchLanguages`/`createLanguage` in `src/lib/vocabularyApi.ts`.
+- **Persistence:** Supabase, not `localStorage` — the app deliberately avoids localStorage-only state (`docs/audit.md` flags exactly this pattern, `emptyFamilies`, as a bug: it silently diverges across devices). A level setting that only lived on one browser would have the same problem.
+
+On its own this is **Low complexity** — comparable to the gender-column migration (`014_add_words_gender.sql`) plus a form control. The catch is sequencing, not difficulty: a slider has nothing to gate or tune until at least two text-only exercise modes exist side by side. Building it before that point is inert UI. **Build it after the first 2-3 new modes ship, not before.**
+
+### 3.3 How the 9 text-only methods relate to level
+
+Once the slider exists, it can do two different jobs depending on the method — some methods just need a *difficulty knob* on an otherwise-identical mechanic, others only make sense to *offer at all* past a certain level, and a couple work the same regardless of level entirely:
+
+| Method | Level relationship | Why |
+|---|---|---|
+| 1.5 Gender/article drill | **Level-agnostic** | Gender errors are documented as persisting from early through advanced learners — it's never a "beginner-only" or "advanced-only" drill, it's just always relevant. No tuning needed. |
+| 1.6 Retrieval-format variation | **Level-agnostic** | A scheduling principle, not a technique itself — it just decides which *other* modes to rotate through, so it applies unchanged at any level. |
+| 1.2 Word-order reconstruction | **Level-tunable** | The mechanic doesn't change — only sentence complexity does (short/simple for A1, subordinate clauses and verb-final constructions for B1+), and that's driven by which stored example sentences get selected, not new logic. |
+| 1.1 Multiple-choice (distractors) | **Level-tunable** | Distractor *closeness* is the knob — obviously-wrong options at A1, near-synonyms/same-gender nouns at B1+. Same component, different selection rule. |
+| 1.8 Collocation/chunk practice | **Level-tunable** | Survival-level fixed phrases work from A1; more nuanced/idiomatic collocations are more of a B1+ payoff. |
+| 1.11 Mnemonic keyword method | **Level-gated — early** | The original keyword-method research shows its biggest advantage during *initial* encoding of new vocabulary; once a word is well-established (which is more likely at higher levels), the technique has less left to offer. |
+| 1.7 Morphological word-family expansion | **Level-gated — later** | Needs an existing base vocabulary for affix patterns to be recognizable at all; low payoff for someone who barely has root words yet. |
+| 1.9 Elaborative interrogation ("why" prompts) | **Level-gated — later** | Explaining *why* a grammar rule applies presumes the learner already has the foundational concept it's explaining — thin value before that exists. |
+| 1.10 Fluency/speed drills | **Level-gated — later** | By definition only operates on already-mastered words; meaningless for a learner who doesn't have a mastered pool yet (i.e., not a true beginner in that language). |
+
+Practically, this means the same feature set serves German (B1+) and French (A1) very differently for this project specifically: French would mostly surface the level-agnostic pair plus mnemonics, while German would additionally unlock word-family expansion, elaborative interrogation, and fluency drills once built — without either language needing its own code path, just a different `level` value gating the same modes.
+
+---
+
 ## Summary Table
 
-| # | Method | New data/infra needed | Reuses existing pattern? | Complexity |
-|---|---|---|---|---|
-| 1.5 | Gender/article drill | None — `words.gender` already exists | Existing grading pipeline | **Very Low** |
-| 1.2 | Word-order reconstruction | None — `ExampleSentence` already exists | `shuffleArray`, existing sentence data | **Low** |
-| 1.1 | Multiple-choice (deck-sourced distractors) | None | Existing per-language word fetch | **Low** |
-| 1.3 | Listening-based recall | None (Web Speech API, client-only) | — | **Medium** (device/voice coverage) |
-| 1.6 | Retrieval-format variation | `mode` column already exists | Touches core review pipeline | **Medium** |
-| 1.8 | Collocation/chunk practice | None — `phrase` word type already exists | — | **Medium** |
-| 1.7 | Morphological word-family expansion | New join table + LLM prompt | Edge Function + `OPENAI_API_KEY` pattern | **Medium** |
-| 1.11 | Mnemonic keyword method | New nullable field + LLM prompt | Edge Function + `OPENAI_API_KEY` pattern | **Medium** |
-| 1.4 | Speaking/pronunciation practice | STT (inconsistent browser support) | — | **High** |
-| 1.12 | Dual-coding image association | Image API/storage, new field, new UI | — | **High** |
-| 1.9 | Elaborative interrogation ("why" prompts) | Static: content authoring. Dynamic: LLM correctness bar | Static: none. Dynamic: Edge Function pattern, but harder correctness | **High** |
-| 1.10 | Fluency/speed drills | New "mastery" concept alongside SM-2 state | Risks interacting with `scheduler.ts` | **High** |
+| # | Method | Modality | New data/infra needed | Level relationship | Complexity |
+|---|---|---|---|---|---|
+| 1.5 | Gender/article drill | Text | None — `words.gender` already exists | Level-agnostic | **Very Low** |
+| 1.2 | Word-order reconstruction | Text | None — `ExampleSentence` already exists | Level-tunable | **Low** |
+| 1.1 | Multiple-choice (deck-sourced distractors) | Text | None | Level-tunable | **Low** |
+| 1.3 | Listening-based recall | Audio *(out of scope for now)* | None (Web Speech API, client-only) | — | **Medium** (device/voice coverage) |
+| 1.6 | Retrieval-format variation | Text | `mode` column already exists | Level-agnostic | **Medium** |
+| 1.8 | Collocation/chunk practice | Text | None — `phrase` word type already exists | Level-tunable | **Medium** |
+| 1.7 | Morphological word-family expansion | Text | New join table + LLM prompt | Level-gated (later) | **Medium** |
+| 1.11 | Mnemonic keyword method | Text | New nullable field + LLM prompt | Level-gated (early) | **Medium** |
+| 1.4 | Speaking/pronunciation practice | Audio *(out of scope for now)* | STT (inconsistent browser support) | — | **High** |
+| 1.12 | Dual-coding image association | Image *(out of scope for now)* | Image API/storage, new field, new UI | — | **High** |
+| 1.9 | Elaborative interrogation ("why" prompts) | Text | Static: content authoring. Dynamic: LLM correctness bar | Level-gated (later) | **High** |
+| 1.10 | Fluency/speed drills | Text | New "mastery" concept alongside SM-2 state | Level-gated (later) | **High** |
 
 *(1.9's static/canned variant is closer to Low-Medium as a content-writing task, but doesn't scale like the others — flagged above rather than in the main list since it isn't really an engineering complexity question.)*
 
 ## Suggested next step
 
-Given the Very Low / Low tier is unusually well-matched to work already sitting in this codebase, the highest-leverage next slice is likely **1.5 (gender drill) + 1.2 (word-order reconstruction) + 1.1 (deck-sourced multiple choice)** — none require new schema, new infrastructure, or new LLM calls, and all three reuse data and utilities that already exist for other reasons. This doc stops short of proposing a build plan or sequencing beyond that observation — that's a follow-up decision, not a research one.
+Given the Very Low / Low tier is unusually well-matched to work already sitting in this codebase, the highest-leverage next slice is likely **1.5 (gender drill) + 1.2 (word-order reconstruction) + 1.1 (deck-sourced multiple choice)** — none require new schema, new infrastructure, or new LLM calls, all three reuse data and utilities that already exist for other reasons, and all three are text-only and either level-agnostic or level-tunable, so they're useful for German and French alike from day one, before the level slider (3.2) even exists. The slider becomes worth building once a second wave of modes — likely drawn from the Medium tier, chosen per-language against the level-relationship table in 3.3 — is ready to be gated by it. This doc stops short of proposing a full build plan or timeline beyond that observation — that's a follow-up decision, not a research one.
