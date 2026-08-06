@@ -1,12 +1,24 @@
 import type { Gender, LanguageId } from '../types/models';
-import { GENDER_LANGUAGES, parseGenderFromArticle, stripLeadingArticle } from '../utils/parseGender';
+import { parseGenderFromArticle } from '../utils/parseGender';
 
 /**
  * Live grammatical-gender/number lookup against Wikidata's Lexeme data --
  * free, keyless, CORS-open (same posture as MyMemory in lookupApi.ts, see
- * that file's header comment). Used only when a noun's own text doesn't
- * unambiguously signal gender: no article at all, or an article shared
- * across genders/plural (German "die", French "l'").
+ * that file's header comment).
+ *
+ * Nothing here hardcodes which languages have grammatical gender or what
+ * their Wikidata language item is: `resolveLanguageQid` looks that up from
+ * `languageId` (an ISO 639-1 code, see src/types/models.ts) dynamically, so
+ * adding a new language to this app (src/hooks/useLanguages.ts) doesn't
+ * need a matching code change here -- it either works immediately (a real
+ * gendered language) or is a harmless no-op (a language with no gender to
+ * find). The small article lists in src/utils/parseGender.ts ARE hardcoded
+ * (a closed, essentially permanent set of grammar words per language,
+ * unlike vocabulary), but only as a zero-network optimization for the
+ * clear-cut cases -- see the strip-and-retry fallback below for why an
+ * incomplete list degrades to "one extra request" instead of "silently
+ * wrong forever", which is what actually happened before (twice) with
+ * "ein Faultier" and "brot".
  *
  * This is always a best-effort suggestion -- a miss or a network failure
  * just leaves gender unresolved (the "gender?" flag), never blocks saving
@@ -14,10 +26,9 @@ import { GENDER_LANGUAGES, parseGenderFromArticle, stripLeadingArticle } from '.
  */
 
 const SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql';
+const USER_AGENT = 'families-app/1.0 (personal vocabulary tracker; gender lookup)';
 
-/** Wikidata QID for each target language's lexeme-language facet. */
-const LANGUAGE_QIDS: Partial<Record<LanguageId, string>> = { de: 'Q188', fr: 'Q150' };
-
+const ISO_639_1_PROPERTY = 'P218';
 const NOUN_QID = 'Q1084';
 const GENDER_PROPERTY = 'P5185';
 const PLURAL_FEATURE_QID = 'Q146786';
@@ -32,9 +43,50 @@ function escapeForSparqlString(text: string): string {
   return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-interface SparqlBinding {
-  genderLabel?: { value: string };
-  isPlural?: { value: string };
+async function sparqlSelect(query: string): Promise<{ bindings: Record<string, { value: string }>[] } | null> {
+  try {
+    const response = await fetch(`${SPARQL_ENDPOINT}?${new URLSearchParams({ query, format: 'json' })}`, {
+      headers: {
+        Accept: 'application/sparql-results+json',
+        // Wikimedia's API etiquette policy 403s requests with no descriptive
+        // User-Agent. Browsers silently ignore this (it's a forbidden header
+        // there, and the browser's own UA already satisfies the policy) --
+        // this only matters for non-browser callers (scripts/backfillWordGender.ts).
+        'User-Agent': USER_AGENT,
+      },
+    });
+    if (!response.ok) return null;
+    const data: { results?: { bindings: Record<string, { value: string }>[] } } = await response.json();
+    return { bindings: data.results?.bindings ?? [] };
+  } catch (error) {
+    console.error('Error querying Wikidata:', error);
+    return null;
+  }
+}
+
+/**
+ * Resolves an ISO 639-1 code (this app's `languageId`) to its Wikidata
+ * language-item QID via P218, e.g. 'de' -> 'Q188'. Cached in memory per
+ * page load -- this is stable, near-static reference data, not worth a
+ * network round trip on every word saved. A failed/not-found lookup is
+ * deliberately NOT cached, so a transient network error or a not-yet-tried
+ * code gets retried next time rather than being written off forever.
+ */
+const languageQidCache = new Map<LanguageId, string>();
+
+async function resolveLanguageQid(languageId: LanguageId): Promise<string | null> {
+  const cached = languageQidCache.get(languageId);
+  if (cached) return cached;
+
+  const result = await sparqlSelect(
+    `SELECT ?lang WHERE { ?lang wdt:${ISO_639_1_PROPERTY} "${escapeForSparqlString(languageId)}" . } LIMIT 1`
+  );
+  const uri = result?.bindings[0]?.lang?.value;
+  const qid = uri?.split('/').pop();
+  if (!qid) return null;
+
+  languageQidCache.set(languageId, qid);
+  return qid;
 }
 
 /**
@@ -50,17 +102,19 @@ function normalizeCaseForLookup(word: string, languageId: LanguageId): string {
 }
 
 /**
- * Looks up the grammatical gender of `text` as a noun in `languageId`, or
- * 'plural' if it matches an inflected plural form instead of a lemma
- * (plural nouns don't carry their own gender -- see the "Schulden" case in
- * the migration/design notes). Returns null on no match or any failure.
+ * Looks up the grammatical gender of `text` taken as-is (no article
+ * stripping here -- callers decide what to try), or 'plural' if it matches
+ * an inflected plural form instead of a lemma (plural nouns don't carry
+ * their own gender -- see the "Schulden" case in the migration/design
+ * notes). Returns null on no match, an unresolvable language, or any
+ * failure.
  */
 export async function lookupGender(text: string, languageId: LanguageId): Promise<Gender | null> {
-  const languageQid = LANGUAGE_QIDS[languageId];
+  const languageQid = await resolveLanguageQid(languageId);
   const word = escapeForSparqlString(normalizeCaseForLookup(text.trim(), languageId));
   if (!languageQid || !word) return null;
 
-  const query = `SELECT ?genderLabel ?isPlural WHERE {
+  const result = await sparqlSelect(`SELECT ?genderLabel ?isPlural WHERE {
   {
     ?lexeme dct:language wd:${languageQid} ;
             wikibase:lemma "${word}"@${languageId} ;
@@ -77,34 +131,24 @@ export async function lookupGender(text: string, languageId: LanguageId): Promis
     BIND(true AS ?isPlural)
   }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-} LIMIT 5`;
+} LIMIT 5`);
+  if (!result) return null;
 
-  try {
-    const response = await fetch(`${SPARQL_ENDPOINT}?${new URLSearchParams({ query, format: 'json' })}`, {
-      headers: {
-        Accept: 'application/sparql-results+json',
-        // Wikimedia's API etiquette policy 403s requests with no descriptive
-        // User-Agent. Browsers silently ignore this (it's a forbidden header
-        // there, and the browser's own UA already satisfies the policy) --
-        // this only matters for non-browser callers (scripts/backfillWordGender.ts).
-        'User-Agent': 'families-app/1.0 (personal vocabulary tracker; gender lookup)',
-      },
-    });
-    if (!response.ok) return null;
+  const genderLabel = result.bindings.find((b) => b.genderLabel)?.genderLabel?.value;
+  if (genderLabel && GENDER_LABEL_MAP[genderLabel]) return GENDER_LABEL_MAP[genderLabel];
 
-    const data: { results?: { bindings: SparqlBinding[] } } = await response.json();
-    const bindings = data.results?.bindings ?? [];
+  if (result.bindings.some((b) => b.isPlural?.value === 'true')) return 'plural';
 
-    const genderLabel = bindings.find((b) => b.genderLabel)?.genderLabel?.value;
-    if (genderLabel && GENDER_LABEL_MAP[genderLabel]) return GENDER_LABEL_MAP[genderLabel];
+  return null;
+}
 
-    if (bindings.some((b) => b.isPlural?.value === 'true')) return 'plural';
-
-    return null;
-  } catch (error) {
-    console.error(`Error looking up gender for "${text}":`, error);
-    return null;
+/** Strips exactly one already-identified leading article/determiner, e.g. "die Verwaltung" -> "Verwaltung", French elided "l'arbre" -> "arbre". */
+function stripFirstWord(text: string, languageId: LanguageId): string {
+  if (languageId === 'fr' && /^l['’]/i.test(text)) {
+    return text.slice(text.search(/['’]/) + 1).trim();
   }
+  const spaceIndex = text.indexOf(' ');
+  return spaceIndex === -1 ? text : text.slice(spaceIndex + 1).trim();
 }
 
 /**
@@ -123,21 +167,40 @@ export function isGenderEligible(partOfSpeech: string | null | undefined): boole
 
 /**
  * Resolves the gender to store for a word: the free, no-network article
- * parse first, then a live lookup only when the article is missing or
- * ambiguous. Deliberately NOT gated on part_of_speech having been filled
- * in -- requiring that first would just move the "I forgot to fill
- * something in" problem this exists to solve -- except when it's
- * explicitly set to something other than 'noun' (see isGenderEligible).
+ * parse first (src/utils/parseGender.ts's small, hardcoded-but-only-an-
+ * optimization article list), then a live lookup.
+ *
+ * The lookup itself never trusts that list to be complete. A *known*
+ * article (parseGenderFromArticle returned 'ambiguous', e.g. German "die"/
+ * "ein", French "l'") is stripped once and looked up directly. Anything
+ * else -- no recognized article at all -- tries the text as typed first
+ * (the common case: a bare noun with no article), and only if that comes
+ * back empty does it strip one leading word and try again. That second
+ * attempt is what makes an incomplete/forgotten article entry (like the
+ * "ein"/"eine" gap that caused "ein Faultier" to silently never resolve)
+ * degrade to "one extra request" instead of "wrong forever": Wikidata's
+ * own data decides whether the remainder is a real noun, not a hardcoded
+ * list of what counts as an article.
  */
 export async function resolveGender(
   text: string,
   languageId: LanguageId,
   partOfSpeech: string | null = null
 ): Promise<Gender | null> {
-  if (!GENDER_LANGUAGES.includes(languageId) || !isGenderEligible(partOfSpeech)) return null;
+  if (!isGenderEligible(partOfSpeech)) return null;
 
-  const fromArticle = parseGenderFromArticle(text, languageId);
+  const trimmed = text.trim();
+  const fromArticle = parseGenderFromArticle(trimmed, languageId);
   if (fromArticle && fromArticle !== 'ambiguous') return fromArticle;
 
-  return lookupGender(stripLeadingArticle(text, languageId), languageId);
+  if (fromArticle === 'ambiguous') {
+    return lookupGender(stripFirstWord(trimmed, languageId), languageId);
+  }
+
+  const direct = await lookupGender(trimmed, languageId);
+  if (direct) return direct;
+
+  const spaceIndex = trimmed.indexOf(' ');
+  if (spaceIndex === -1) return null;
+  return lookupGender(trimmed.slice(spaceIndex + 1).trim(), languageId);
 }
