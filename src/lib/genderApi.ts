@@ -108,16 +108,38 @@ function normalizeCaseForLookup(word: string, languageId: LanguageId): string {
  * their own gender -- see the "Schulden" case in the migration/design
  * notes). Returns null on no match, an unresolvable language, or any
  * failure.
+ *
+ * `forceCapitalize` opts into fixing a noun typed casually in lowercase
+ * ("brot" -> "Brot"). It must come from the caller, not be decided in here,
+ * because it's only safe under real confidence the text IS a noun: either
+ * a known article preceded it, or the whole original entry was one bare
+ * word with nothing else around it. Blindly capitalizing any lowercase
+ * text is NOT safe -- German lets every verb infinitive nominalize into a
+ * real neuter noun ("lernen" -> "das Lernen", "sein" -> "das Sein"), and
+ * Wikidata often documents those nominalizations as genuine dictionary
+ * entries. Force-capitalizing the tail end of a verb phrase like "auswendig
+ * lernen" after stripping "auswendig" would "find" that unrelated noun
+ * sense and wrongly tag the whole phrase -- see resolveGender for which
+ * call sites are allowed to pass true.
  */
-export async function lookupGender(text: string, languageId: LanguageId): Promise<Gender | null> {
+export async function lookupGender(text: string, languageId: LanguageId, forceCapitalize: boolean): Promise<Gender | null> {
   const languageQid = await resolveLanguageQid(languageId);
-  const word = escapeForSparqlString(normalizeCaseForLookup(text.trim(), languageId));
-  if (!languageQid || !word) return null;
+  const trimmed = text.trim();
+  if (!languageQid || !trimmed) return null;
+
+  // The plural-form branch NEVER force-capitalizes, independent of the
+  // caller's request: a genuine plural noun is already conventionally
+  // typed capitalized, so matching only the text's own casing is enough,
+  // and avoids the same nominalized-verb collision on inflected forms
+  // (lowercase "reden" force-capitalized to "Reden" coincidentally spells
+  // the real plural of "die Rede").
+  const lemmaWord = escapeForSparqlString(forceCapitalize ? normalizeCaseForLookup(trimmed, languageId) : trimmed);
+  const formWord = escapeForSparqlString(trimmed);
 
   const result = await sparqlSelect(`SELECT ?genderLabel ?isPlural WHERE {
   {
     ?lexeme dct:language wd:${languageQid} ;
-            wikibase:lemma "${word}"@${languageId} ;
+            wikibase:lemma "${lemmaWord}"@${languageId} ;
             wikibase:lexicalCategory wd:${NOUN_QID} ;
             wdt:${GENDER_PROPERTY} ?gender .
   }
@@ -126,7 +148,7 @@ export async function lookupGender(text: string, languageId: LanguageId): Promis
     ?lexeme2 dct:language wd:${languageQid} ;
              wikibase:lexicalCategory wd:${NOUN_QID} ;
              ontolex:lexicalForm ?form .
-    ?form ontolex:representation "${word}"@${languageId} ;
+    ?form ontolex:representation "${formWord}"@${languageId} ;
           wikibase:grammaticalFeature wd:${PLURAL_FEATURE_QID} .
     BIND(true AS ?isPlural)
   }
@@ -172,15 +194,20 @@ export function isGenderEligible(partOfSpeech: string | null | undefined): boole
  *
  * The lookup itself never trusts that list to be complete. A *known*
  * article (parseGenderFromArticle returned 'ambiguous', e.g. German "die"/
- * "ein", French "l'") is stripped once and looked up directly. Anything
- * else -- no recognized article at all -- tries the text as typed first
- * (the common case: a bare noun with no article), and only if that comes
- * back empty does it strip one leading word and try again. That second
- * attempt is what makes an incomplete/forgotten article entry (like the
- * "ein"/"eine" gap that caused "ein Faultier" to silently never resolve)
- * degrade to "one extra request" instead of "wrong forever": Wikidata's
- * own data decides whether the remainder is a real noun, not a hardcoded
- * list of what counts as an article.
+ * "ein", French "l'") is stripped once and looked up directly -- force-
+ * capitalized, since an article grammatically guarantees a noun follows.
+ * Anything else -- no recognized article at all -- tries the text as typed
+ * first (force-capitalized only if it's a single bare word, e.g. "brot":
+ * the common case of a lowercase-typed noun), and only if that comes back
+ * empty does it strip one leading word and try again, WITHOUT force-
+ * capitalizing that remainder. That second attempt is what makes an
+ * incomplete/forgotten article entry (like the "ein"/"eine" gap that
+ * caused "ein Faultier" to silently never resolve) degrade to "one extra
+ * request" instead of "wrong forever": Wikidata's own data decides whether
+ * the remainder is a real noun, not a hardcoded list of what counts as an
+ * article. Not force-capitalizing it is what keeps a verb phrase like
+ * "auswendig lernen" from matching the unrelated noun "das Lernen" once
+ * stripped down to "lernen" -- see lookupGender's comment for why.
  */
 export async function resolveGender(
   text: string,
@@ -194,13 +221,14 @@ export async function resolveGender(
   if (fromArticle && fromArticle !== 'ambiguous') return fromArticle;
 
   if (fromArticle === 'ambiguous') {
-    return lookupGender(stripFirstWord(trimmed, languageId), languageId);
+    return lookupGender(stripFirstWord(trimmed, languageId), languageId, true);
   }
 
-  const direct = await lookupGender(trimmed, languageId);
+  const isSingleWord = !trimmed.includes(' ');
+  const direct = await lookupGender(trimmed, languageId, isSingleWord);
   if (direct) return direct;
 
   const spaceIndex = trimmed.indexOf(' ');
   if (spaceIndex === -1) return null;
-  return lookupGender(trimmed.slice(spaceIndex + 1).trim(), languageId);
+  return lookupGender(trimmed.slice(spaceIndex + 1).trim(), languageId, false);
 }
