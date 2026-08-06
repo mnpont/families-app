@@ -90,15 +90,21 @@ async function resolveLanguageQid(languageId: LanguageId): Promise<string | null
 }
 
 /**
- * German nouns are always capitalized grammatically (Wikidata's lemma data
- * reflects that), but plenty of words get typed casually in lowercase
- * ("brot"). Force-capitalizing only for German avoids a silent lookup miss
- * on nothing more than casing -- French common nouns are lowercase by
- * convention, so this would break a French match instead of fixing one.
+ * Whether a noun's own casing convention is capitalized (German: every
+ * noun) or not (French, and every other language this app might add) isn't
+ * hardcoded per language here -- instead of guessing a direction, a
+ * case-flexible lookup tries the text's own casing AND its first-letter
+ * case flipped, as two exact-match candidates. Covers "brot" -> "Brot" and
+ * "Viande" -> "viande" alike with one dynamic mechanism instead of a
+ * per-language rule that only fixed one direction. Returns just [word] when
+ * there's no letter to flip.
  */
-function normalizeCaseForLookup(word: string, languageId: LanguageId): string {
-  if (languageId !== 'de' || word.length === 0) return word;
-  return word[0].toUpperCase() + word.slice(1);
+function caseVariants(word: string): string[] {
+  if (!word) return [];
+  const first = word[0];
+  const flippedFirst = first === first.toUpperCase() ? first.toLowerCase() : first.toUpperCase();
+  if (flippedFirst === first) return [word];
+  return [word, flippedFirst + word.slice(1)];
 }
 
 /**
@@ -109,37 +115,41 @@ function normalizeCaseForLookup(word: string, languageId: LanguageId): string {
  * notes). Returns null on no match, an unresolvable language, or any
  * failure.
  *
- * `forceCapitalize` opts into fixing a noun typed casually in lowercase
- * ("brot" -> "Brot"). It must come from the caller, not be decided in here,
- * because it's only safe under real confidence the text IS a noun: either
- * a known article preceded it, or the whole original entry was one bare
- * word with nothing else around it. Blindly capitalizing any lowercase
- * text is NOT safe -- German lets every verb infinitive nominalize into a
- * real neuter noun ("lernen" -> "das Lernen", "sein" -> "das Sein"), and
- * Wikidata often documents those nominalizations as genuine dictionary
- * entries. Force-capitalizing the tail end of a verb phrase like "auswendig
- * lernen" after stripping "auswendig" would "find" that unrelated noun
- * sense and wrongly tag the whole phrase -- see resolveGender for which
- * call sites are allowed to pass true.
+ * `caseFlexible` opts into also trying the text's case flipped (fixing a
+ * noun typed with the "wrong" casing for its language, e.g. "brot" or
+ * "Viande"). It must come from the caller, not be decided in here, because
+ * it's only safe under real confidence the text IS a noun: either a known
+ * article preceded it, or the whole original entry was one bare word with
+ * nothing else around it. Blindly trying both casings on ANY text is NOT
+ * safe -- German lets every verb infinitive nominalize into a real neuter
+ * noun ("lernen" -> "das Lernen", "sein" -> "das Sein"), and Wikidata often
+ * documents those nominalizations as genuine dictionary entries.
+ * Case-flipping the tail end of a verb phrase like "auswendig lernen"
+ * after stripping "auswendig" would "find" that unrelated noun sense and
+ * wrongly tag the whole phrase -- see resolveGender for which call sites
+ * are allowed to pass true.
  */
-export async function lookupGender(text: string, languageId: LanguageId, forceCapitalize: boolean): Promise<Gender | null> {
+export async function lookupGender(text: string, languageId: LanguageId, caseFlexible: boolean): Promise<Gender | null> {
   const languageQid = await resolveLanguageQid(languageId);
   const trimmed = text.trim();
   if (!languageQid || !trimmed) return null;
 
-  // The plural-form branch NEVER force-capitalizes, independent of the
+  // The plural-form branch NEVER tries a case flip, independent of the
   // caller's request: a genuine plural noun is already conventionally
-  // typed capitalized, so matching only the text's own casing is enough,
-  // and avoids the same nominalized-verb collision on inflected forms
-  // (lowercase "reden" force-capitalized to "Reden" coincidentally spells
-  // the real plural of "die Rede").
-  const lemmaWord = escapeForSparqlString(forceCapitalize ? normalizeCaseForLookup(trimmed, languageId) : trimmed);
+  // typed in its language's normal casing, so matching only the text's own
+  // casing is enough, and avoids the same nominalized-verb collision on
+  // inflected forms (lowercase "reden" flipped to "Reden" coincidentally
+  // spells the real plural of "die Rede").
+  const lemmaCandidates = (caseFlexible ? caseVariants(trimmed) : [trimmed])
+    .map((candidate) => `"${escapeForSparqlString(candidate)}"@${languageId}`)
+    .join(' ');
   const formWord = escapeForSparqlString(trimmed);
 
   const result = await sparqlSelect(`SELECT ?genderLabel ?isPlural WHERE {
   {
+    VALUES ?lemmaCandidate { ${lemmaCandidates} }
     ?lexeme dct:language wd:${languageQid} ;
-            wikibase:lemma "${lemmaWord}"@${languageId} ;
+            wikibase:lemma ?lemmaCandidate ;
             wikibase:lexicalCategory wd:${NOUN_QID} ;
             wdt:${GENDER_PROPERTY} ?gender .
   }
@@ -194,20 +204,21 @@ export function isGenderEligible(partOfSpeech: string | null | undefined): boole
  *
  * The lookup itself never trusts that list to be complete. A *known*
  * article (parseGenderFromArticle returned 'ambiguous', e.g. German "die"/
- * "ein", French "l'") is stripped once and looked up directly -- force-
- * capitalized, since an article grammatically guarantees a noun follows.
- * Anything else -- no recognized article at all -- tries the text as typed
- * first (force-capitalized only if it's a single bare word, e.g. "brot":
- * the common case of a lowercase-typed noun), and only if that comes back
- * empty does it strip one leading word and try again, WITHOUT force-
- * capitalizing that remainder. That second attempt is what makes an
- * incomplete/forgotten article entry (like the "ein"/"eine" gap that
- * caused "ein Faultier" to silently never resolve) degrade to "one extra
- * request" instead of "wrong forever": Wikidata's own data decides whether
- * the remainder is a real noun, not a hardcoded list of what counts as an
- * article. Not force-capitalizing it is what keeps a verb phrase like
- * "auswendig lernen" from matching the unrelated noun "das Lernen" once
- * stripped down to "lernen" -- see lookupGender's comment for why.
+ * "ein", French "l'") is stripped once and looked up case-flexibly, since
+ * an article grammatically guarantees a noun follows. Anything else -- no
+ * recognized article at all -- tries the text as typed first (case-
+ * flexible only if it's a single bare word, e.g. "brot" or "Viande": the
+ * common case of a noun typed in the "wrong" casing for its language), and
+ * only if that comes back empty does it strip one leading word and try
+ * again, matching that remainder's own casing only. That second attempt is
+ * what makes an incomplete/forgotten article entry (like the "ein"/"eine"
+ * gap that caused "ein Faultier" to silently never resolve) degrade to
+ * "one extra request" instead of "wrong forever": Wikidata's own data
+ * decides whether the remainder is a real noun, not a hardcoded list of
+ * what counts as an article. Not trying a case flip there is what keeps a
+ * verb phrase like "auswendig lernen" from matching the unrelated noun
+ * "das Lernen" once stripped down to "lernen" -- see lookupGender's
+ * comment for why.
  */
 export async function resolveGender(
   text: string,
