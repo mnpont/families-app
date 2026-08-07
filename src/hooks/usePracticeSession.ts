@@ -3,7 +3,7 @@ import * as vocabularyApi from '../lib/vocabularyApi';
 import { useReviewSession } from './useReviewSession';
 import { pickDistractors, type DistractorCandidate } from '../utils/pickDistractors';
 import { shuffleArray } from '../utils/shuffleArray';
-import type { LanguageId } from '../types/models';
+import type { Grade, LanguageId } from '../types/models';
 import type { ReviewCard } from '../types/reviewCard';
 
 /** 1 correct answer + up to this many distractors. */
@@ -33,14 +33,19 @@ function sanitizeLlmDistractors(raw: string[] | null, correctAnswer: string): st
 /**
  * Drives a Practice session: the same due-queue/grading as Flashcards
  * (src/hooks/useReviewSession.ts, untouched), layered with multiple-choice
- * distractors. Prefers each card's LLM-generated distractors
- * (words.llm_distractors, migration 015, generated once per word by the
- * generate-distractors Edge Function) and tops up with the client-side
+ * distractors. Prefers each card's stored LLM distractors
+ * (words.llm_distractors, migration 015) and tops up with the client-side
  * deck/length/part-of-speech heuristic (src/utils/pickDistractors.ts) --
  * drawn from every word already in the language, reusing
  * vocabularyApi.fetchVocabulary, no new Supabase query -- whenever a word
  * has fewer than 3 usable LLM distractors (not yet generated, generation
  * failed, or predates the feature).
+ *
+ * The stored set isn't permanent: grading a word fires a background refresh
+ * (submitGradeAndRefresh below) that swaps in a different set before the
+ * word is next due, so a learner can't memorize "the answer is whichever
+ * option isn't X/Y/Z" -- the word currently on screen is always served
+ * instantly from whatever's cached, same as before.
  *
  * A due card is only "practicable" if it has a translation AND at least one
  * distractor (LLM or heuristic) can be found for it -- cards that don't
@@ -117,5 +122,15 @@ export function usePracticeSession(languageId: LanguageId | null) {
     });
   }, [cards, pool, deckByWordId]);
 
-  return { questions, loading: loadingCards || poolLoading, submitting, submitGrade };
+  // Fires refresh-distractors in the background right after grading -- never
+  // awaited, never blocks the UI's own advance-to-next-question flow. This
+  // is what keeps a word's options from being the exact same three forever:
+  // by the time it's due again, a different set is already stored (see
+  // supabase/functions/refresh-distractors and vocabularyApi.ts).
+  const submitGradeAndRefresh = async (wordId: number, grade: Grade) => {
+    vocabularyApi.refreshDistractorsInBackground(wordId);
+    await submitGrade(wordId, grade);
+  };
+
+  return { questions, loading: loadingCards || poolLoading, submitting, submitGrade: submitGradeAndRefresh };
 }

@@ -26,14 +26,26 @@ client-side key behind).
   wrong translations for a single Word's Practice-tab multiple-choice
   questions (`words.llm_distractors`, migration `015`). Called by
   `createWord()` alongside `generate-example-sentence`, same best-effort
-  contract and same "generate once, cache" design — not regenerated per
-  practice session. Falls back to a client-side deck/length/part-of-speech
-  heuristic (`src/utils/pickDistractors.ts`) when null/empty.
+  contract. No-ops if the word already has distractors (use
+  `refresh-distractors` to force a new set). Falls back to a client-side
+  deck/length/part-of-speech heuristic (`src/utils/pickDistractors.ts`) when
+  null/empty/short.
+- **`refresh-distractors`** — replaces a word's distractors with a fresh set
+  that avoids repeating the ones just shown. Fired in the background (never
+  awaited) by `src/hooks/usePracticeSession.ts` right after a word is graded
+  in Practice, so by the time it's due again a different set is already
+  stored — the mechanism that keeps a learner from memorizing "the answer is
+  whichever option isn't X/Y/Z" instead of actually recalling the word. A
+  failed/empty regeneration leaves the existing set untouched rather than
+  wiping it.
 - **`batch-generate-distractors`** — the distractor equivalent of
   `batch-generate-sentences`: sweeps every Word missing `llm_distractors`,
-  same `{ languageId, limit }` shape, not wired to run automatically.
+  same `{ languageId, limit }` shape, not wired to run automatically. Only
+  fills words with none yet — same no-op-if-present rule as
+  `generate-distractors`.
 - **`_shared/generateDistractors.ts`** — the OpenAI call + Supabase
-  read/write logic both distractor functions share.
+  read/write logic all three distractor functions share, including the
+  "avoid repeating these" prompt clause `refresh-distractors` uses.
 
 ## Why these exist (history)
 
@@ -51,10 +63,10 @@ pair in `languages`, not just German/Spanish.
 
 ## Environment
 
-All four functions need `OPENAI_API_KEY` set as a Supabase Edge Function
+All five functions need `OPENAI_API_KEY` set as a Supabase Edge Function
 secret (Project Settings → Edge Functions → Secrets, or `supabase secrets
-set OPENAI_API_KEY=...`) — one secret, shared by both sentence and
-distractor generation. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are
+set OPENAI_API_KEY=...`) — one secret, shared by sentence and distractor
+generation alike. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are
 provided automatically by the Supabase runtime — no need to set those.
 
 ## Deploying
@@ -64,6 +76,7 @@ supabase functions deploy generate-example-sentence
 supabase functions deploy batch-generate-sentences
 supabase functions deploy generate-distractors
 supabase functions deploy batch-generate-distractors
+supabase functions deploy refresh-distractors
 ```
 
 (Deploys both `_shared/` and the calling function, since Supabase bundles

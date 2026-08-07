@@ -231,6 +231,21 @@ export async function createWord(
   };
 }
 
+/**
+ * Fire-and-forget: asks refresh-distractors to swap in a fresh
+ * Practice-tab distractor set for `wordId`, avoiding the ones just shown.
+ * Never awaited by callers and never throws -- see
+ * src/hooks/usePracticeSession.ts, which calls this right after a word is
+ * graded, so its NEXT appearance has a different set ready with zero added
+ * latency either time. A failure here just leaves the word's current
+ * distractors in place until the next successful refresh.
+ */
+export function refreshDistractorsInBackground(wordId: number): void {
+  supabase.functions.invoke('refresh-distractors', { body: { wordId } }).catch((error) => {
+    console.error(`Error refreshing distractors for word ${wordId}:`, error);
+  });
+}
+
 export async function createDeck(name: string, languageId: LanguageId): Promise<void> {
   const { error } = await supabase.from('decks').insert({ name, language_id: languageId, owner_id: OWNER_ID });
   if (error) throw error;
