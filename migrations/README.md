@@ -17,6 +17,7 @@ SQL schema for the v2 language-agnostic data model (`docs/v2-plan.md` Section 1)
 8. Apply `009_create_review_log.sql` through `012_add_review_delete_policies.sql` (Phase 1 Step 2 — spaced repetition). `010`'s backfill gives every already-existing word a fresh, immediately-due schedule row, so nothing is silently excluded from the review queue for predating the table. `012` closes a gap `011` left open -- see that file's comments.
 9. Apply `013_restrict_target_languages.sql` whenever you want to scope the language picker down to a subset of `languages` (e.g. German/French only) without touching existing translation data.
 10. Apply `014_add_words_gender.sql` for the word-list gender chip feature (Word Gender Indicator handoff).
+11. Apply `015_add_words_llm_distractors.sql` for the Practice tab's LLM-generated multiple-choice distractors.
 
 ## Files
 
@@ -34,6 +35,7 @@ SQL schema for the v2 language-agnostic data model (`docs/v2-plan.md` Section 1)
 12. `012_add_review_delete_policies.sql` — adds the DELETE policies `011` should have included, matching `008`'s established precedent of granting delete rights on every table reachable by a Word's cascade delete.
 13. `013_restrict_target_languages.sql` — adds `languages.is_target` so the picker can be scoped to a subset (e.g. German/French) without deleting English/Spanish, which every existing translation's `language_id` still points to (`src/utils/detectTranslationLanguage.ts` only ever returns `'en'`/`'es'`); also removes Italian outright, since nothing references it.
 14. `014_add_words_gender.sql` — adds `words.gender` ('masc'/'fem'/'neutr'/'plural'), populated at add/edit time by `src/lib/genderApi.ts` (article parse, falling back to a live Wikidata lookup) whenever `part_of_speech = 'noun'`.
+15. `015_add_words_llm_distractors.sql` — adds `words.llm_distractors` (text array), populated once per word by the `generate-distractors` Edge Function, called alongside `generate-example-sentence` right after a word is created.
 
 ## Related scripts (`/scripts`)
 

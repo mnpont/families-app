@@ -3,17 +3,11 @@ import { useReviewSession } from '../hooks/useReviewSession';
 import type { Grade, LanguageId } from '../types/models';
 import type { ReviewCard } from '../types/reviewCard';
 import { Flashcard } from './Flashcard';
+import { GradeButtons } from './GradeButtons';
 
 interface FlashcardsViewProps {
   languageId: LanguageId | null;
 }
-
-const GRADE_BUTTONS: { grade: Grade; label: string; variant: 'button-secondary' | 'button-primary' }[] = [
-  { grade: 'again', label: 'Again', variant: 'button-secondary' },
-  { grade: 'hard', label: 'Hard', variant: 'button-secondary' },
-  { grade: 'good', label: 'Good', variant: 'button-primary' },
-  { grade: 'easy', label: 'Easy', variant: 'button-primary' },
-];
 
 /** Local, purely-presentational stage of the post-grade "sent to the back of the deck" motion. */
 type DeckPhase = 'idle' | 'left' | 'back';
@@ -85,16 +79,7 @@ export function FlashcardsView({ languageId }: FlashcardsViewProps) {
 
       {/* Always in the DOM so grading never shifts anything above it -- only opacity/position change. */}
       <div className={`flashcard-nav ${!isFlipped ? 'flashcard-nav--pending' : ''}`}>
-        {GRADE_BUTTONS.map(({ grade, label, variant }) => (
-          <button
-            key={grade}
-            className={`button ${variant}`}
-            onClick={() => handleGrade(grade)}
-            disabled={submitting || isAnimating}
-          >
-            {label}
-          </button>
-        ))}
+        <GradeButtons onGrade={handleGrade} disabled={submitting || isAnimating} />
       </div>
     </div>
   );

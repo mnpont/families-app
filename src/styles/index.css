@@ -1194,3 +1194,175 @@ body::after {
 .nav-button:not(.active) .nav-icon {
     opacity: 0.4;
 }
+
+/* Practice (multiple-choice) -- docs/practice-mc-spec.md */
+
+.practice-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    padding: 24px 20px 40px;
+    overflow-y: auto;
+}
+
+.practice-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 22px;
+}
+
+.practice-progress-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.practice-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 100%);
+    transition: width 0.3s ease;
+}
+
+.practice-progress-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #999;
+    white-space: nowrap;
+}
+
+.practice-question {
+    width: 100%;
+    max-width: 420px;
+    transform: translateY(0);
+    /* No visibility transition here on purpose: removing --transitioning
+       (entering a new question) must reveal it instantly, then slide it
+       down from -14px -- not wait through a delay first. */
+    transition: transform 0.18s ease;
+}
+
+/* Slide only -- deliberately never touches opacity, so the solid .mc-option
+   cards stay 100% opaque at every frame of the transition. An opacity fade
+   here would make them look transparent while animating, since opacity
+   applies to the whole subtree, not just this wrapper.
+
+   visibility is delayed until the slide itself finishes (0.18s), then flips
+   to hidden -- so the exit motion is seen, but however long grading's
+   network round-trip takes after that is invisible, not a card frozen
+   mid-air. A card that can't be seen can't look "stuck." */
+.practice-question.practice-question--transitioning {
+    transform: translateY(-14px);
+    visibility: hidden;
+    transition: transform 0.18s ease, visibility 0s linear 0.18s;
+}
+
+.practice-prompt {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    text-align: center;
+    color: #1a1a1a;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    margin: 14px 0 18px;
+}
+
+.practice-prompt.size-small {
+    font-size: 40px;
+}
+
+.practice-prompt.size-medium {
+    font-size: 30px;
+}
+
+.practice-prompt.size-large {
+    font-size: 22px;
+}
+
+.practice-prompt.size-xlarge {
+    font-size: 18px;
+}
+
+.mc-options {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.mc-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 15px 17px;
+    border-radius: 13px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    text-align: left;
+    color: #1a1a1a;
+    background: #ffffff;
+    border: 1.5px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mc-option:hover:not(:disabled) {
+    border-color: rgba(255, 154, 158, 0.5);
+    box-shadow: 0 4px 14px rgba(255, 154, 158, 0.15);
+}
+
+.mc-option:disabled {
+    cursor: default;
+}
+
+.mc-option.correct {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: #10b981;
+    color: #0d7a5f;
+}
+
+.mc-option.wrong {
+    background: rgba(225, 75, 75, 0.1);
+    border-color: #e14b4b;
+    color: #c23b3b;
+}
+
+.mc-option.dim {
+    opacity: 0.5;
+}
+
+.mc-option-icon {
+    display: flex;
+    width: 20px;
+    height: 20px;
+    flex: none;
+}
+
+.mc-option-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.mc-option.correct .mc-option-icon {
+    color: #10b981;
+}
+
+.mc-option.wrong .mc-option-icon {
+    color: #e14b4b;
+}
+
+/* Tighter footer than .flashcard-nav's default 16px gap, matching the design spec's grading row. */
+.practice-grade-row {
+    gap: 7px;
+    margin-top: 14px;
+}
