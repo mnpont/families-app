@@ -7,13 +7,14 @@ import { Header } from './components/Header';
 import { NavBar } from './components/NavBar';
 import { FamiliesView } from './components/FamiliesView';
 import { FlashcardsView } from './components/FlashcardsView';
+import { PracticeView } from './components/PracticeView';
 import { AddWordModal } from './components/AddWordModal';
 import { ExpandedFamilyModal } from './components/ExpandedFamilyModal';
 import { FamilySelectorModal } from './components/FamilySelectorModal';
 import { EditWordModal } from './components/EditWordModal';
 import { EditFamilyModal } from './components/EditFamilyModal';
 
-export type View = 'families' | 'flashcards';
+export type View = 'families' | 'flashcards' | 'practice';
 
 export default function App() {
   const [view, setView] = useState<View>('families');
@@ -110,6 +111,8 @@ export default function App() {
         )}
 
         {view === 'flashcards' && <FlashcardsView languageId={selectedLanguageId} />}
+
+        {view === 'practice' && <PracticeView languageId={selectedLanguageId} />}
       </div>
 
       {showAddModal && (

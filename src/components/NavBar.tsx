@@ -1,5 +1,6 @@
 import { FamiliesIcon } from './icons/FamiliesIcon';
 import { FlashcardsIcon } from './icons/FlashcardsIcon';
+import { PracticeIcon } from './icons/PracticeIcon';
 import type { View } from '../App';
 
 interface NavBarProps {
@@ -18,6 +19,9 @@ export function NavBar({ view, onViewChange }: NavBarProps) {
         onClick={() => onViewChange('flashcards')}
       >
         <FlashcardsIcon />
+      </button>
+      <button className={`nav-button ${view === 'practice' ? 'active' : ''}`} onClick={() => onViewChange('practice')}>
+        <PracticeIcon />
       </button>
     </div>
   );
