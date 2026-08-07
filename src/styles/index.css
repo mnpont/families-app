@@ -1241,12 +1241,16 @@ body::after {
 .practice-question {
     width: 100%;
     max-width: 420px;
-    opacity: 1;
-    transition: opacity 0.22s ease;
+    transform: translateY(0);
+    transition: transform 0.22s ease;
 }
 
-.practice-question.fade-out {
-    opacity: 0;
+/* Slide only -- deliberately never touches opacity, so the solid .mc-option
+   cards stay 100% opaque at every frame of the transition. An opacity fade
+   here would make them look transparent while animating, since opacity
+   applies to the whole subtree, not just this wrapper. */
+.practice-question.practice-question--transitioning {
+    transform: translateY(-14px);
 }
 
 .practice-prompt {

@@ -9,8 +9,15 @@ interface PracticeViewProps {
 }
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-/** Crossfade duration, each direction -- see docs/practice-mc-spec.md "Advancing to next question." */
-const FADE_MS = 220;
+/**
+ * Transition duration, each direction, between questions. Deliberately a
+ * transform-only slide, not an opacity crossfade: opacity affects the whole
+ * subtree's alpha, so a fading parent makes the solid .mc-option cards
+ * render semi-transparent for the length of the transition -- exactly the
+ * "looks transparent" report this replaced. A translateY slide never
+ * touches opacity, so the option cards stay fully solid at every frame.
+ */
+const TRANSITION_MS = 220;
 
 export function PracticeView({ languageId }: PracticeViewProps) {
   const { questions, loading, submitting, submitGrade } = usePracticeSession(languageId);
@@ -67,12 +74,12 @@ export function PracticeView({ languageId }: PracticeViewProps) {
     setIsAnimating(true);
     setFrozenQuestion(current);
     const gradePromise = submitGrade(current.card.id, grade);
-    await wait(FADE_MS);
+    await wait(TRANSITION_MS);
     await gradePromise;
     setAnsweredCount((n) => n + 1);
     setSelected(null);
     setFrozenQuestion(null);
-    await wait(FADE_MS);
+    await wait(TRANSITION_MS);
     setIsAnimating(false);
   };
 
@@ -90,7 +97,7 @@ export function PracticeView({ languageId }: PracticeViewProps) {
         </div>
       </div>
 
-      <div className={`practice-question ${isAnimating ? 'fade-out' : ''}`}>
+      <div className={`practice-question ${isAnimating ? 'practice-question--transitioning' : ''}`}>
         <MultipleChoiceCard
           prompt={displayed.card.text}
           options={displayed.options}

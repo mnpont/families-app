@@ -18,6 +18,14 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
  * A missing or failed generation is never fatal either way --
  * src/utils/pickDistractors.ts's deck/length/part-of-speech heuristic covers
  * any word that doesn't have (enough) LLM distractors at a given moment.
+ *
+ * Every generation call also double-checks the correct translation itself
+ * for missing accents/diacritics or capitalization slips (e.g. a learner
+ * typing "El" when Spanish grammar requires "Él") and, when it's confident
+ * the fix is spelling-only (see applyTranslationCorrection's guard), applies
+ * it to translations.text -- otherwise a typo in the user's own entry reads
+ * as a giveaway next to correctly-accented distractors, the opposite
+ * problem this whole feature exists to prevent.
  */
 
 export interface WordForDistractorGeneration {
@@ -29,6 +37,8 @@ export interface WordForDistractorGeneration {
 export interface GeneratedDistractors {
   wordId: number;
   distractors: string[];
+  /** Set only when a spelling/diacritic correction was actually applied to translations.text. */
+  correctedTranslation?: string;
 }
 
 const OPENAI_MODEL = "gpt-4o-mini";
@@ -63,10 +73,16 @@ Rules:
 - Match sentence type/mood exactly: if the correct translation is a question, all ${DISTRACTOR_COUNT} distractors must also be phrased as questions (same for exclamations or commands) -- the correct answer should never be identifiable just because it's the only one with a "?" or "!".
 ${avoidRule}${topicRule}- No duplicates of each other or of the correct translation.
 - A2-B1 level vocabulary, matching this app's existing example sentences.
-- Return ONLY valid JSON: {"distractors": ["...", "...", "..."]}`;
+
+Also proofread the correct translation "${correctTranslation}" itself: if it's missing accents/diacritics or has a capitalization mistake (common with quick typing -- e.g. Spanish "El" written instead of "Él"), return a corrected version in "correctedTranslation". Fix ONLY spelling, accents, and capitalization -- never reword or rephrase. If it's already correct, return it completely unchanged.
+
+Return ONLY valid JSON: {"distractors": ["...", "...", "..."], "correctedTranslation": "..."}`;
 }
 
-async function callOpenAI(prompt: string, apiKey: string): Promise<unknown[]> {
+async function callOpenAI(
+  prompt: string,
+  apiKey: string
+): Promise<{ distractors: unknown[]; correctedTranslation: unknown }> {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -77,7 +93,7 @@ async function callOpenAI(prompt: string, apiKey: string): Promise<unknown[]> {
       model: OPENAI_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_tokens: 180,
+      max_tokens: 220,
       response_format: { type: "json_object" },
     }),
   });
@@ -91,7 +107,7 @@ async function callOpenAI(prompt: string, apiKey: string): Promise<unknown[]> {
   if (!Array.isArray(parsed.distractors)) {
     throw new Error(`OpenAI response missing distractors array: ${JSON.stringify(parsed)}`);
   }
-  return parsed.distractors;
+  return { distractors: parsed.distractors, correctedTranslation: parsed.correctedTranslation };
 }
 
 /**
@@ -113,6 +129,29 @@ function sanitizeDistractors(raw: unknown[], correctTranslation: string, avoid: 
     cleaned.push(trimmed);
   }
   return cleaned;
+}
+
+/** Lowercased, accent-stripped comparison key -- "El" and "Él" both normalize to "el". */
+function spellingKey(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Decides whether the model's suggested `correctedTranslation` is safe to
+ * apply: only when it's the SAME word once accents/case are stripped (so
+ * "El" -> "Él" passes, but any real wording change -- a different word, a
+ * rephrase -- is rejected, no matter how minor it looks). Returns null when
+ * no correction is warranted or safe.
+ */
+function resolveSafeCorrection(original: string, rawCorrected: unknown): string | null {
+  if (typeof rawCorrected !== "string") return null;
+  const corrected = rawCorrected.trim();
+  if (!corrected || corrected === original) return null;
+  return spellingKey(corrected) === spellingKey(original) ? corrected : null;
 }
 
 /**
@@ -158,12 +197,18 @@ async function fetchGenerationContext(supabase: SupabaseClient, word: WordForDis
   return { correctTranslation: translation.text, targetLanguageName, translationLanguageName, deckName };
 }
 
+interface DistractorGenerationResult {
+  distractors: string[];
+  /** Non-null only when resolveSafeCorrection accepted the model's suggestion. */
+  correctedTranslation: string | null;
+}
+
 /** Builds and sanitizes one fresh distractor set, avoiding `avoid`. Doesn't touch the database. */
 async function generateDistractorSet(
   supabase: SupabaseClient,
   word: WordForDistractorGeneration,
   avoid: string[]
-): Promise<string[]> {
+): Promise<DistractorGenerationResult> {
   const ctx = await fetchGenerationContext(supabase, word);
 
   const openaiKey = Deno.env.get("OPENAI_API_KEY");
@@ -177,8 +222,37 @@ async function generateDistractorSet(
     ctx.deckName,
     avoid
   );
-  const raw = await callOpenAI(prompt, openaiKey);
-  return sanitizeDistractors(raw, ctx.correctTranslation, avoid);
+  const { distractors: rawDistractors, correctedTranslation: rawCorrected } = await callOpenAI(prompt, openaiKey);
+
+  const correctedTranslation = resolveSafeCorrection(ctx.correctTranslation, rawCorrected);
+  const distractorAvoid = correctedTranslation ? [...avoid, correctedTranslation] : avoid;
+  const distractors = sanitizeDistractors(rawDistractors, ctx.correctTranslation, distractorAvoid);
+
+  return { distractors, correctedTranslation };
+}
+
+/**
+ * Applies a spelling/accent/capitalization-only fix to a word's primary
+ * translation. Never called with anything but a correction
+ * resolveSafeCorrection has already verified is the same word -- this never
+ * rewrites wording. Best-effort: a failure here doesn't affect distractor
+ * generation, which has already succeeded by the time this runs.
+ */
+async function applyTranslationCorrection(
+  supabase: SupabaseClient,
+  wordId: number,
+  correctedText: string
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("translations")
+      .update({ text: correctedText })
+      .eq("word_id", wordId)
+      .eq("is_primary", true);
+    if (error) throw error;
+  } catch (error) {
+    console.error(`Error applying translation correction for word ${wordId}:`, error);
+  }
 }
 
 /**
@@ -202,7 +276,7 @@ export async function generateAndStoreDistractors(
     return { wordId: word.id, distractors: existingWord.llm_distractors };
   }
 
-  const distractors = await generateDistractorSet(supabase, word, []);
+  const { distractors, correctedTranslation } = await generateDistractorSet(supabase, word, []);
   if (distractors.length === 0) {
     throw new Error(`OpenAI returned no usable distractors for word ${word.id}`);
   }
@@ -213,7 +287,11 @@ export async function generateAndStoreDistractors(
     .eq("id", word.id);
   if (updateError) throw updateError;
 
-  return { wordId: word.id, distractors };
+  if (correctedTranslation) {
+    await applyTranslationCorrection(supabase, word.id, correctedTranslation);
+  }
+
+  return { wordId: word.id, distractors, ...(correctedTranslation ? { correctedTranslation } : {}) };
 }
 
 /**
@@ -240,7 +318,7 @@ export async function refreshDistractors(
   if (existingError) throw existingError;
   const previous = existingWord?.llm_distractors ?? [];
 
-  const distractors = await generateDistractorSet(supabase, word, previous);
+  const { distractors, correctedTranslation } = await generateDistractorSet(supabase, word, previous);
   if (distractors.length === 0) {
     return { wordId: word.id, distractors: previous };
   }
@@ -251,5 +329,9 @@ export async function refreshDistractors(
     .eq("id", word.id);
   if (updateError) throw updateError;
 
-  return { wordId: word.id, distractors };
+  if (correctedTranslation) {
+    await applyTranslationCorrection(supabase, word.id, correctedTranslation);
+  }
+
+  return { wordId: word.id, distractors, ...(correctedTranslation ? { correctedTranslation } : {}) };
 }
