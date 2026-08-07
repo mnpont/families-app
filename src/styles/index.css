@@ -1295,15 +1295,16 @@ body::after {
     font-weight: 600;
     text-align: left;
     color: #1a1a1a;
-    background: rgba(255, 255, 255, 0.94);
+    background: #ffffff;
     border: 1.5px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .mc-option:hover:not(:disabled) {
     border-color: rgba(255, 154, 158, 0.5);
-    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 4px 14px rgba(255, 154, 158, 0.15);
 }
 
 .mc-option:disabled {
