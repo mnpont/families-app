@@ -1242,15 +1242,25 @@ body::after {
     width: 100%;
     max-width: 420px;
     transform: translateY(0);
-    transition: transform 0.22s ease;
+    /* No visibility transition here on purpose: removing --transitioning
+       (entering a new question) must reveal it instantly, then slide it
+       down from -14px -- not wait through a delay first. */
+    transition: transform 0.18s ease;
 }
 
 /* Slide only -- deliberately never touches opacity, so the solid .mc-option
    cards stay 100% opaque at every frame of the transition. An opacity fade
    here would make them look transparent while animating, since opacity
-   applies to the whole subtree, not just this wrapper. */
+   applies to the whole subtree, not just this wrapper.
+
+   visibility is delayed until the slide itself finishes (0.18s), then flips
+   to hidden -- so the exit motion is seen, but however long grading's
+   network round-trip takes after that is invisible, not a card frozen
+   mid-air. A card that can't be seen can't look "stuck." */
 .practice-question.practice-question--transitioning {
     transform: translateY(-14px);
+    visibility: hidden;
+    transition: transform 0.18s ease, visibility 0s linear 0.18s;
 }
 
 .practice-prompt {

@@ -399,20 +399,25 @@ export async function fetchReviewSession(
 
 /** Records a graded review: appends to the ReviewLog history and writes the scheduler's output as the word's new live state. */
 export async function submitReview(wordId: number, grade: Grade, next: ScheduleResult, now: Date = new Date()): Promise<void> {
-  const { error: logError } = await supabase
-    .from('review_log')
-    .insert({ word_id: wordId, user_id: OWNER_ID, reviewed_at: now.toISOString(), grade, mode: 'recognition' });
+  // Neither write depends on the other's result, so run them concurrently
+  // instead of one-after-the-other -- roughly halves the network wait a
+  // learner sits through between questions (see PracticeView's transition,
+  // which is otherwise held visibly at rest waiting on exactly this call).
+  const [{ error: logError }, { error: stateError }] = await Promise.all([
+    supabase
+      .from('review_log')
+      .insert({ word_id: wordId, user_id: OWNER_ID, reviewed_at: now.toISOString(), grade, mode: 'recognition' }),
+    supabase
+      .from('word_schedule_state')
+      .update({
+        interval_days: next.intervalDays,
+        ease_factor: next.easeFactor,
+        due_at: next.dueAt.toISOString(),
+        review_count: next.reviewCount,
+      })
+      .eq('word_id', wordId)
+      .eq('user_id', OWNER_ID),
+  ]);
   if (logError) throw logError;
-
-  const { error: stateError } = await supabase
-    .from('word_schedule_state')
-    .update({
-      interval_days: next.intervalDays,
-      ease_factor: next.easeFactor,
-      due_at: next.dueAt.toISOString(),
-      review_count: next.reviewCount,
-    })
-    .eq('word_id', wordId)
-    .eq('user_id', OWNER_ID);
   if (stateError) throw stateError;
 }

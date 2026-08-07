@@ -10,14 +10,19 @@ interface PracticeViewProps {
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 /**
- * Transition duration, each direction, between questions. Deliberately a
- * transform-only slide, not an opacity crossfade: opacity affects the whole
- * subtree's alpha, so a fading parent makes the solid .mc-option cards
- * render semi-transparent for the length of the transition -- exactly the
- * "looks transparent" report this replaced. A translateY slide never
- * touches opacity, so the option cards stay fully solid at every frame.
+ * Exit slide duration -- deliberately a transform, not an opacity crossfade:
+ * opacity affects the whole subtree's alpha, so a fading parent makes the
+ * solid .mc-option cards render semi-transparent for the length of the
+ * transition -- exactly the "looks transparent" report this replaced. A
+ * translateY slide never touches opacity, so option cards stay fully solid.
  */
-const TRANSITION_MS = 220;
+const EXIT_MS = 180;
+/**
+ * Floor on how long the card stays hidden after the exit slide, so a very
+ * fast grade submission doesn't cause a jarring instant swap. Actual hidden
+ * time is max(this, the real network wait) -- see handleGrade's Promise.all.
+ */
+const MIN_HIDDEN_MS = 120;
 
 export function PracticeView({ languageId }: PracticeViewProps) {
   const { questions, loading, submitting, submitGrade } = usePracticeSession(languageId);
@@ -74,12 +79,20 @@ export function PracticeView({ languageId }: PracticeViewProps) {
     setIsAnimating(true);
     setFrozenQuestion(current);
     const gradePromise = submitGrade(current.card.id, grade);
-    await wait(TRANSITION_MS);
-    await gradePromise;
+    // Let the exit slide finish (matches the CSS visibility-transition delay
+    // below) before the card goes fully hidden. From there, however long the
+    // grade submission actually takes is invisible, not a card frozen
+    // mid-air -- see PracticeView's earlier "stuck" report: the previous
+    // version held the card statically visible at its offset for this
+    // entire (variable, network-bound) wait, which is what read as stuck.
+    await wait(EXIT_MS);
+    await Promise.all([wait(MIN_HIDDEN_MS), gradePromise]);
     setAnsweredCount((n) => n + 1);
     setSelected(null);
     setFrozenQuestion(null);
-    await wait(TRANSITION_MS);
+    // Removing the class now makes the new question visible immediately
+    // (the base .practice-question rule has no visibility transition) and
+    // starts its entrance slide back to rest -- no extra fixed wait needed.
     setIsAnimating(false);
   };
 
