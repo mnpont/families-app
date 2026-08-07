@@ -31,11 +31,16 @@ export interface PracticeQuestion {
 export function usePracticeSession(languageId: LanguageId | null) {
   const { cards, loading: loadingCards, submitting, submitGrade } = useReviewSession(languageId);
   const [pool, setPool] = useState<DistractorCandidate[]>([]);
+  // ReviewCard doesn't carry deck membership (see toReviewCard in vocabularyApi.ts) --
+  // this map recovers it from the same vocabulary fetch that builds the distractor pool,
+  // so distractors can be preferentially drawn from the correct answer's own deck.
+  const [deckByWordId, setDeckByWordId] = useState<Map<number, string>>(new Map());
   const [poolLoading, setPoolLoading] = useState(true);
 
   useEffect(() => {
     if (!languageId) {
       setPool([]);
+      setDeckByWordId(new Map());
       setPoolLoading(false);
       return;
     }
@@ -48,8 +53,14 @@ export function usePracticeSession(languageId: LanguageId | null) {
         if (cancelled) return;
         const candidates = snapshot.words
           .filter((word) => word.translation)
-          .map((word) => ({ wordId: word.id, text: word.translation!.text }));
+          .map((word) => ({
+            wordId: word.id,
+            text: word.translation!.text,
+            deckName: word.deckName,
+            partOfSpeech: word.partOfSpeech,
+          }));
         setPool(candidates);
+        setDeckByWordId(new Map(snapshot.words.map((word) => [word.id, word.deckName])));
       })
       .catch((error) => {
         console.error('Error loading practice distractor pool:', error);
@@ -68,12 +79,19 @@ export function usePracticeSession(languageId: LanguageId | null) {
       const correctAnswer = card.translation?.text;
       if (!correctAnswer) return [];
 
-      const distractors = pickDistractors(pool, card.id, correctAnswer, OPTION_COUNT - 1);
+      const distractors = pickDistractors(
+        pool,
+        card.id,
+        correctAnswer,
+        OPTION_COUNT - 1,
+        deckByWordId.get(card.id),
+        card.partOfSpeech
+      );
       if (distractors.length === 0) return [];
 
       return [{ card, options: shuffleArray([correctAnswer, ...distractors]), correctAnswer }];
     });
-  }, [cards, pool]);
+  }, [cards, pool, deckByWordId]);
 
   return { questions, loading: loadingCards || poolLoading, submitting, submitGrade };
 }
