@@ -15,18 +15,38 @@ export interface PracticeQuestion {
   correctAnswer: string;
 }
 
+/** Case-insensitive trim + dedupe against the correct answer, shared shape with the Edge Function's own sanitizing (supabase/functions/_shared/generateDistractors.ts). */
+function sanitizeLlmDistractors(raw: string[] | null, correctAnswer: string): string[] {
+  if (!raw) return [];
+  const seen = new Set<string>([correctAnswer.trim().toLowerCase()]);
+  const cleaned: string[] = [];
+  for (const entry of raw) {
+    const trimmed = entry.trim();
+    const lower = trimmed.toLowerCase();
+    if (!trimmed || seen.has(lower)) continue;
+    seen.add(lower);
+    cleaned.push(trimmed);
+  }
+  return cleaned;
+}
+
 /**
  * Drives a Practice session: the same due-queue/grading as Flashcards
- * (src/hooks/useReviewSession.ts, untouched), layered with a multiple-choice
- * distractor pool built from every word already in the language (reuses
- * vocabularyApi.fetchVocabulary -- no new Supabase query, see
- * docs/practice-mc-spec.md Part B).
+ * (src/hooks/useReviewSession.ts, untouched), layered with multiple-choice
+ * distractors. Prefers each card's LLM-generated distractors
+ * (words.llm_distractors, migration 015, generated once per word by the
+ * generate-distractors Edge Function) and tops up with the client-side
+ * deck/length/part-of-speech heuristic (src/utils/pickDistractors.ts) --
+ * drawn from every word already in the language, reusing
+ * vocabularyApi.fetchVocabulary, no new Supabase query -- whenever a word
+ * has fewer than 3 usable LLM distractors (not yet generated, generation
+ * failed, or predates the feature).
  *
  * A due card is only "practicable" if it has a translation AND at least one
- * distractor can be found for it -- cards that don't clear that bar are
- * filtered out of `questions` rather than shown with too few options. They
- * stay due and simply aren't offered here this session (docs/practice-mc-spec.md
- * "Distractor pool edge cases").
+ * distractor (LLM or heuristic) can be found for it -- cards that don't
+ * clear that bar are filtered out of `questions` rather than shown with too
+ * few options. They stay due and simply aren't offered here this session
+ * (docs/practice-mc-spec.md "Distractor pool edge cases").
  */
 export function usePracticeSession(languageId: LanguageId | null) {
   const { cards, loading: loadingCards, submitting, submitGrade } = useReviewSession(languageId);
@@ -79,14 +99,18 @@ export function usePracticeSession(languageId: LanguageId | null) {
       const correctAnswer = card.translation?.text;
       if (!correctAnswer) return [];
 
-      const distractors = pickDistractors(
-        pool,
-        card.id,
-        correctAnswer,
-        OPTION_COUNT - 1,
-        deckByWordId.get(card.id),
-        card.partOfSpeech
-      );
+      const llmDistractors = sanitizeLlmDistractors(card.llmDistractors, correctAnswer).slice(0, OPTION_COUNT - 1);
+      const stillNeeded = OPTION_COUNT - 1 - llmDistractors.length;
+      const heuristicDistractors =
+        stillNeeded > 0
+          ? pickDistractors(pool, card.id, correctAnswer, stillNeeded, {
+              preferredDeckName: deckByWordId.get(card.id),
+              preferredPartOfSpeech: card.partOfSpeech,
+              exclude: llmDistractors,
+            })
+          : [];
+
+      const distractors = [...llmDistractors, ...heuristicDistractors];
       if (distractors.length === 0) return [];
 
       return [{ card, options: shuffleArray([correctAnswer, ...distractors]), correctAnswer }];

@@ -7,34 +7,41 @@ export interface DistractorCandidate {
   partOfSpeech: string | null;
 }
 
+export interface PickDistractorsOptions {
+  /** Ranked above a different-deck candidate -- same topic/register, the plausible-distractor principle from docs/phase2-exercise-methods.md #1.1. */
+  preferredDeckName?: string;
+  preferredPartOfSpeech?: string | null;
+  /** Extra text to treat as already-taken, e.g. LLM distractors already chosen for this question -- see usePracticeSession.ts. Matched case-insensitively. */
+  exclude?: string[];
+}
+
 /**
  * Selects up to `count` distractor translation strings for a multiple-choice
  * question, drawn from `pool` (see vocabularyApi.fetchVocabulary). Excludes
  * the correct word itself and anything case-insensitively identical to the
- * correct answer's own text, so two options can't secretly both be "right."
- * Returns fewer than `count` if the pool doesn't have enough distinct
- * candidates -- callers decide what to do with a short (or empty) result.
+ * correct answer's own text (or `options.exclude`), so two options can't
+ * secretly both be "right." Returns fewer than `count` if the pool doesn't
+ * have enough distinct candidates -- callers decide what to do with a short
+ * (or empty) result.
  *
- * Picking purely at random (the original v1 behavior) tends to produce
- * obviously-wrong distractors -- a word from a totally unrelated deck, or a
- * four-word phrase sitting next to three single words, gives the answer away
- * without the learner ever having to discriminate. So candidates are ranked,
- * not just shuffled-and-sliced: same deck as the correct answer beats a
- * different deck (same topic/register, the plausible-distractor principle
- * from docs/phase2-exercise-methods.md #1.1), and within a tier, closer
+ * This is the fallback for words without LLM-generated distractors
+ * (words.llm_distractors, migration 015) -- picking purely at random tends
+ * to produce obviously-wrong distractors, so candidates are ranked, not just
+ * shuffled-and-sliced: same deck as the correct answer beats a different
+ * deck, same part of speech beats a different one, and within a tier, closer
  * length to the correct answer beats a wildly different one. Ties still
  * resolve randomly (the pool is shuffled before sorting, and Array#sort is
- * stable), so the same word doesn't get the same three distractors every time.
+ * stable), so the same word doesn't get the same distractors every time.
  */
 export function pickDistractors(
   pool: DistractorCandidate[],
   correctWordId: number,
   correctText: string,
   count = 3,
-  preferredDeckName?: string,
-  preferredPartOfSpeech?: string | null
+  options: PickDistractorsOptions = {}
 ): string[] {
-  const seen = new Set<string>([correctText.trim().toLowerCase()]);
+  const { preferredDeckName, preferredPartOfSpeech, exclude = [] } = options;
+  const seen = new Set<string>([correctText.trim().toLowerCase(), ...exclude.map((text) => text.trim().toLowerCase())]);
   const candidates: DistractorCandidate[] = [];
 
   for (const candidate of pool) {

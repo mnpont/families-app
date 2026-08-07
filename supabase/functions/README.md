@@ -1,8 +1,9 @@
 # Edge Functions
 
-Example-sentence generation, running server-side so the LLM API key never
-ships in the browser bundle (see the multi-language UI in `src/`, which has
-no real user auth to gate a client-side key behind).
+Example-sentence and multiple-choice-distractor generation, running
+server-side so the LLM API key never ships in the browser bundle (see the
+multi-language UI in `src/`, which has no real user auth to gate a
+client-side key behind).
 
 ## Functions
 
@@ -21,6 +22,18 @@ no real user auth to gate a client-side key behind).
 - **`_shared/generateSentence.ts`** — the actual OpenAI call + Supabase
   read/write logic both functions share, so they can't drift out of sync
   with each other or with the schema.
+- **`generate-distractors`** — generates and stores up to 3 plausible-but-
+  wrong translations for a single Word's Practice-tab multiple-choice
+  questions (`words.llm_distractors`, migration `015`). Called by
+  `createWord()` alongside `generate-example-sentence`, same best-effort
+  contract and same "generate once, cache" design — not regenerated per
+  practice session. Falls back to a client-side deck/length/part-of-speech
+  heuristic (`src/utils/pickDistractors.ts`) when null/empty.
+- **`batch-generate-distractors`** — the distractor equivalent of
+  `batch-generate-sentences`: sweeps every Word missing `llm_distractors`,
+  same `{ languageId, limit }` shape, not wired to run automatically.
+- **`_shared/generateDistractors.ts`** — the OpenAI call + Supabase
+  read/write logic both distractor functions share.
 
 ## Why these exist (history)
 
@@ -38,9 +51,10 @@ pair in `languages`, not just German/Spanish.
 
 ## Environment
 
-Both functions need `OPENAI_API_KEY` set as a Supabase Edge Function secret
-(Project Settings → Edge Functions → Secrets, or `supabase secrets set
-OPENAI_API_KEY=...`). `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are
+All four functions need `OPENAI_API_KEY` set as a Supabase Edge Function
+secret (Project Settings → Edge Functions → Secrets, or `supabase secrets
+set OPENAI_API_KEY=...`) — one secret, shared by both sentence and
+distractor generation. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are
 provided automatically by the Supabase runtime — no need to set those.
 
 ## Deploying
@@ -48,6 +62,8 @@ provided automatically by the Supabase runtime — no need to set those.
 ```
 supabase functions deploy generate-example-sentence
 supabase functions deploy batch-generate-sentences
+supabase functions deploy generate-distractors
+supabase functions deploy batch-generate-distractors
 ```
 
 (Deploys both `_shared/` and the calling function, since Supabase bundles

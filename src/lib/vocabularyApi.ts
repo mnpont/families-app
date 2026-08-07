@@ -21,6 +21,7 @@ interface WordRow {
   text: string;
   part_of_speech: string | null;
   gender: string | null;
+  llm_distractors: string[] | null;
   created_at: string;
   translations: { id: number; text: string; language_id: string; is_primary: boolean }[];
   example_sentences: { id: number; text: string; translation_text: string | null }[];
@@ -53,6 +54,7 @@ function toVocabWord(word: WordRow, deckName: string): VocabWord {
     gender: word.gender as VocabWord['gender'],
     translation: translation ? { text: translation.text } : null,
     exampleSentence: example ? { text: example.text, translationText: example.translation_text } : null,
+    llmDistractors: word.llm_distractors,
     deckName,
     createdAt: word.created_at,
   };
@@ -78,7 +80,7 @@ export async function fetchVocabulary(languageId: LanguageId): Promise<Vocabular
     supabase
       .from('words')
       .select(
-        'id, language_id, text, part_of_speech, gender, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text)'
+        'id, language_id, text, part_of_speech, gender, llm_distractors, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text)'
       )
       .eq('language_id', languageId)
       .order('created_at', { ascending: true }),
@@ -183,22 +185,37 @@ export async function createWord(
   });
   if (scheduleError) throw scheduleError;
 
-  let exampleSentence: VocabWord['exampleSentence'] = null;
-  try {
-    // Best-effort: an LLM outage or a missing/rate-limited API key must not
-    // block the word itself from being saved. A gap left here can be swept
-    // up later by the batch-generate-sentences Edge Function.
-    const { data: sentence, error: sentenceError } = await supabase.functions.invoke(
-      'generate-example-sentence',
-      { body: { wordId: word.id } }
-    );
-    if (sentenceError) throw sentenceError;
-    if (sentence?.text) {
-      exampleSentence = { text: sentence.text, translationText: sentence.translationText ?? null };
-    }
-  } catch (error) {
-    console.error(`Error generating example sentence for word ${word.id}:`, error);
-  }
+  // Best-effort, run concurrently: an LLM outage or a missing/rate-limited
+  // API key must not block the word itself from being saved, and neither
+  // call depends on the other. A gap left here can be swept up later by the
+  // batch-generate-sentences / batch-generate-distractors Edge Functions.
+  const [exampleSentence, llmDistractors] = await Promise.all([
+    (async (): Promise<VocabWord['exampleSentence']> => {
+      try {
+        const { data: sentence, error: sentenceError } = await supabase.functions.invoke(
+          'generate-example-sentence',
+          { body: { wordId: word.id } }
+        );
+        if (sentenceError) throw sentenceError;
+        return sentence?.text ? { text: sentence.text, translationText: sentence.translationText ?? null } : null;
+      } catch (error) {
+        console.error(`Error generating example sentence for word ${word.id}:`, error);
+        return null;
+      }
+    })(),
+    (async (): Promise<VocabWord['llmDistractors']> => {
+      try {
+        const { data: result, error: distractorsError } = await supabase.functions.invoke('generate-distractors', {
+          body: { wordId: word.id },
+        });
+        if (distractorsError) throw distractorsError;
+        return Array.isArray(result?.distractors) && result.distractors.length > 0 ? result.distractors : null;
+      } catch (error) {
+        console.error(`Error generating distractors for word ${word.id}:`, error);
+        return null;
+      }
+    })(),
+  ]);
 
   return {
     id: word.id,
@@ -208,6 +225,7 @@ export async function createWord(
     gender,
     translation: { text: translationText },
     exampleSentence,
+    llmDistractors,
     deckName,
     createdAt: word.created_at,
   };
@@ -302,7 +320,7 @@ interface ScheduleRow {
 }
 
 const REVIEW_CARD_SELECT =
-  'interval_days, ease_factor, review_count, due_at, words!inner(id, language_id, text, part_of_speech, gender, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text))';
+  'interval_days, ease_factor, review_count, due_at, words!inner(id, language_id, text, part_of_speech, gender, llm_distractors, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text))';
 
 function toReviewCard(row: ScheduleRow): ReviewCard {
   return {

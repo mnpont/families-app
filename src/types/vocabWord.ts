@@ -14,6 +14,8 @@ export interface VocabWord {
   gender: Gender | null;
   translation: { text: string } | null;
   exampleSentence: { text: string; translationText: string | null } | null;
+  /** Up to 3 LLM-generated plausible-but-wrong translations for Practice-tab multiple choice, or null if not (yet) generated. */
+  llmDistractors: string[] | null;
   deckName: string;
   createdAt: string;
 }
