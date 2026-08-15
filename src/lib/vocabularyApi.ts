@@ -323,8 +323,8 @@ export async function deleteDeckAndWords(name: string, languageId: LanguageId): 
   if (deleteDeckError) throw deleteDeckError;
 }
 
-/** How many never-before-reviewed words a single review session introduces, on top of however many are already due. */
-const NEW_WORD_CAP = 10;
+/** Total words (due repeats + never-reviewed) a single review session serves. Due repeats are prioritized; new words fill whatever slots are left -- keeps a large overdue backlog from dumping into one sitting. */
+const SESSION_CAP = 30;
 
 interface ScheduleRow {
   interval_days: number;
@@ -349,22 +349,26 @@ function toReviewCard(row: ScheduleRow): ReviewCard {
 
 /**
  * A review session's card batch: every word already due for repeat review
- * (review_count > 0, due_at <= now), plus up to `newWordCap` words that have
- * never been reviewed yet (review_count === 0) -- not a shuffle of the
- * entire deck (docs/v2-plan.md Phase 1 Step 2).
+ * (review_count > 0, due_at <= now) up to `sessionCap`, topped up with
+ * never-reviewed words (review_count === 0) for whatever slots remain --
+ * not a shuffle of the entire deck (docs/v2-plan.md Phase 1 Step 2).
+ *
+ * The combined cap (rather than separate due/new caps) is what keeps a
+ * large overdue backlog from dumping into one sitting: due repeats always
+ * win the available slots, so the backlog still gets worked down session
+ * over session, just gradually instead of all at once.
  *
  * Note: a lapsed card (graded "again") resets review_count to 0, same as
  * textbook SM-2's repetition count -- so right after a lapse it temporarily
- * shares the new-word cap bucket with words that have truly never been
- * reviewed, rather than getting its own "relearning" queue. That's a
+ * competes with words that have truly never been reviewed for the leftover
+ * slots, rather than getting its own "relearning" queue. That's a
  * deliberate simplification for this step; a dedicated relearning queue is
- * future work if the new-word cap turns out to starve lapsed cards in
- * practice.
+ * future work if that turns out to starve lapsed cards in practice.
  */
 export async function fetchReviewSession(
   languageId: LanguageId,
   now: Date = new Date(),
-  newWordCap: number = NEW_WORD_CAP
+  sessionCap: number = SESSION_CAP
 ): Promise<ReviewCard[]> {
   const nowIso = now.toISOString();
 
@@ -376,7 +380,8 @@ export async function fetchReviewSession(
       .eq('words.language_id', languageId)
       .gt('review_count', 0)
       .lte('due_at', nowIso)
-      .order('due_at', { ascending: true }),
+      .order('due_at', { ascending: true })
+      .limit(sessionCap),
     supabase
       .from('word_schedule_state')
       .select(REVIEW_CARD_SELECT)
@@ -385,7 +390,7 @@ export async function fetchReviewSession(
       .eq('review_count', 0)
       .lte('due_at', nowIso)
       .order('due_at', { ascending: true })
-      .limit(newWordCap),
+      .limit(sessionCap),
   ]);
 
   if (dueError) throw dueError;
@@ -393,8 +398,9 @@ export async function fetchReviewSession(
 
   const dueRows = (due ?? []) as unknown as ScheduleRow[];
   const freshRows = (fresh ?? []) as unknown as ScheduleRow[];
+  const remainingSlots = Math.max(0, sessionCap - dueRows.length);
 
-  return [...dueRows, ...freshRows].map(toReviewCard);
+  return [...dueRows, ...freshRows.slice(0, remainingSlots)].map(toReviewCard);
 }
 
 /** Records a graded review: appends to the ReviewLog history and writes the scheduler's output as the word's new live state. */
