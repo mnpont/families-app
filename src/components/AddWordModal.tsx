@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { lookupTranslation } from '../lib/lookupApi';
 import { SearchIcon } from './icons/SearchIcon';
 import { WORD_TYPES, type LanguageId, type WordType } from '../types/models';
@@ -15,15 +15,6 @@ interface AddWordModalProps {
 }
 
 type AddModalMode = 'word' | 'family' | 'language';
-
-/** Fades a field group out without unmounting it, so the modal's height stays constant across all three modes. */
-function fadeStyle(active: boolean): CSSProperties {
-  return {
-    opacity: active ? 1 : 0,
-    pointerEvents: active ? 'auto' : 'none',
-    transition: 'opacity 0.3s ease',
-  };
-}
 
 export function AddWordModal({
   languageId,
@@ -101,6 +92,9 @@ export function AddWordModal({
 
   const submit = mode === 'word' ? submitWord : mode === 'family' ? submitFamily : submitLanguage;
   const submitLabel = mode === 'word' ? 'Add Word' : mode === 'family' ? 'Add Family' : 'Add Language';
+  // A freshly-typed-but-not-yet-created family (via the inline "+ New family" row) won't be in
+  // familyNames until the word is actually submitted -- keep it selectable in the dropdown anyway.
+  const familyOptions = selectedFamily && !familyNames.includes(selectedFamily) ? [...familyNames, selectedFamily] : familyNames;
 
   return (
     <div className="overlay" onClick={onClose}>
@@ -116,115 +110,114 @@ export function AddWordModal({
             Add Language
           </button>
         </div>
-        <div className="input-group" style={fadeStyle(mode !== 'language')}>
-          <label className="input-label">{mode === 'word' ? `New ${languageName} word` : 'Family Name'}</label>
-          <input
-            type="text"
-            className="input-field"
-            value={mode === 'word' ? wordText : newFamilyName}
-            onChange={(e) => (mode === 'word' ? setWordText(e.target.value) : setNewFamilyName(e.target.value))}
-            placeholder={mode === 'word' ? 'Type the word' : 'e.g. Colors, Furniture...'}
-            autoFocus={mode !== 'language'}
-            tabIndex={mode !== 'language' ? 0 : -1}
-            onKeyDown={(e) => e.key === 'Enter' && mode === 'family' && submitFamily()}
-          />
-        </div>
-        <div className="input-group" style={fadeStyle(mode === 'word')}>
-          <label className="input-label">Translation</label>
-          <div className="input-field-wrapper">
-            <input
-              type="text"
-              className="input-field"
-              value={translationText}
-              onChange={(e) => setTranslationText(e.target.value)}
-              placeholder="Type the translation, or look it up"
-              tabIndex={mode === 'word' ? 0 : -1}
-              onKeyDown={(e) => e.key === 'Enter' && submitWord()}
-            />
-            <button
-              type="button"
-              className="input-icon-button"
-              onClick={handleLookup}
-              disabled={!languageId || !wordText.trim() || isLookingUp}
-              title="Look up a suggested translation"
-              tabIndex={mode === 'word' ? 0 : -1}
-            >
-              <SearchIcon />
-            </button>
-          </div>
-        </div>
-        <div className="input-group" style={fadeStyle(mode === 'word')}>
-          <label className="input-label">Word type (optional)</label>
-          <select
-            className="input-field"
-            value={wordType}
-            onChange={(e) => setWordType(e.target.value as WordType | '')}
-            tabIndex={mode === 'word' ? 0 : -1}
-          >
-            <option value="">Not set</option>
-            {WORD_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type[0].toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="input-group" style={fadeStyle(mode === 'word')}>
-          <label className="input-label">Family</label>
-          <div className="family-chip-row">
-            {familyNames.map((name) => (
-              <div
-                key={name}
-                className={`family-chip ${selectedFamily === name ? 'active' : ''}`}
-                onClick={() => setSelectedFamily(name)}
-              >
-                {name}
-              </div>
-            ))}
-            <div className="family-chip-new" onClick={() => setNewFamilyChipOpen((open) => !open)}>
-              + New
-            </div>
-          </div>
-          {newFamilyChipOpen && (
-            <div className="family-chip-new-input-row">
+        <div className="modal-fields">
+          {mode !== 'language' && (
+            <div className="input-group">
+              <label className="input-label">{mode === 'word' ? `New ${languageName} word` : 'Family Name'}</label>
               <input
                 type="text"
                 className="input-field"
-                value={newFamilyChipText}
-                onChange={(e) => setNewFamilyChipText(e.target.value)}
-                placeholder="e.g. Colors"
+                value={mode === 'word' ? wordText : newFamilyName}
+                onChange={(e) => (mode === 'word' ? setWordText(e.target.value) : setNewFamilyName(e.target.value))}
+                placeholder={mode === 'word' ? 'Type the word' : 'e.g. Colors, Furniture...'}
                 autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && confirmNewFamilyChip()}
+                onKeyDown={(e) => e.key === 'Enter' && mode === 'family' && submitFamily()}
               />
-              <button type="button" className="button button-primary family-chip-new-confirm" onClick={confirmNewFamilyChip}>
-                Add
-              </button>
             </div>
           )}
-        </div>
-        <div className="input-group" style={fadeStyle(mode === 'language')}>
-          <label className="input-label">Language name</label>
-          <input
-            type="text"
-            className="input-field"
-            value={newLanguageName}
-            onChange={(e) => setNewLanguageName(e.target.value)}
-            placeholder="e.g. Italian"
-            tabIndex={mode === 'language' ? 0 : -1}
-          />
-        </div>
-        <div className="input-group" style={fadeStyle(mode === 'language')}>
-          <label className="input-label">Language code (ISO 639-1)</label>
-          <input
-            type="text"
-            className="input-field"
-            value={newLanguageCode}
-            onChange={(e) => setNewLanguageCode(e.target.value)}
-            placeholder="e.g. it"
-            maxLength={5}
-            tabIndex={mode === 'language' ? 0 : -1}
-            onKeyDown={(e) => e.key === 'Enter' && submitLanguage()}
-          />
+          {mode === 'word' && (
+            <>
+              <div className="input-group">
+                <label className="input-label">Translation</label>
+                <div className="input-field-wrapper">
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={translationText}
+                    onChange={(e) => setTranslationText(e.target.value)}
+                    placeholder="Type the translation, or look it up"
+                    onKeyDown={(e) => e.key === 'Enter' && submitWord()}
+                  />
+                  <button
+                    type="button"
+                    className="input-icon-button"
+                    onClick={handleLookup}
+                    disabled={!languageId || !wordText.trim() || isLookingUp}
+                    title="Look up a suggested translation"
+                  >
+                    <SearchIcon />
+                  </button>
+                </div>
+              </div>
+              <div className="input-group">
+                <label className="input-label">Word type (optional)</label>
+                <select className="input-field" value={wordType} onChange={(e) => setWordType(e.target.value as WordType | '')}>
+                  <option value="">Not set</option>
+                  {WORD_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type[0].toUpperCase() + type.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="input-group">
+                <label className="input-label">Family</label>
+                <select className="input-field" value={selectedFamily} onChange={(e) => setSelectedFamily(e.target.value)}>
+                  {familyOptions.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className="family-add-link" onClick={() => setNewFamilyChipOpen((open) => !open)}>
+                  + New family
+                </button>
+                {newFamilyChipOpen && (
+                  <div className="family-chip-new-input-row">
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={newFamilyChipText}
+                      onChange={(e) => setNewFamilyChipText(e.target.value)}
+                      placeholder="e.g. Colors"
+                      autoFocus
+                      onKeyDown={(e) => e.key === 'Enter' && confirmNewFamilyChip()}
+                    />
+                    <button type="button" className="button button-primary family-chip-new-confirm" onClick={confirmNewFamilyChip}>
+                      Add
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          {mode === 'language' && (
+            <>
+              <div className="input-group">
+                <label className="input-label">Language name</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={newLanguageName}
+                  onChange={(e) => setNewLanguageName(e.target.value)}
+                  placeholder="e.g. Italian"
+                  autoFocus
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Language code (ISO 639-1)</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={newLanguageCode}
+                  onChange={(e) => setNewLanguageCode(e.target.value)}
+                  placeholder="e.g. it"
+                  maxLength={5}
+                  onKeyDown={(e) => e.key === 'Enter' && submitLanguage()}
+                />
+              </div>
+            </>
+          )}
         </div>
         <div className="button-group">
           <button className="button button-secondary" onClick={onClose}>
