@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { lookupTranslation } from '../lib/lookupApi';
 import { SearchIcon } from './icons/SearchIcon';
 import { WORD_TYPES, type LanguageId, type WordType } from '../types/models';
@@ -15,6 +15,15 @@ interface AddWordModalProps {
 }
 
 type AddModalMode = 'word' | 'family' | 'language';
+
+/** Fades a field group out without unmounting it, so the modal's height stays constant across all three modes. */
+function fadeStyle(active: boolean): CSSProperties {
+  return {
+    opacity: active ? 1 : 0,
+    pointerEvents: active ? 'auto' : 'none',
+    transition: 'opacity 0.3s ease',
+  };
+}
 
 export function AddWordModal({
   languageId,
@@ -107,10 +116,7 @@ export function AddWordModal({
             Add Language
           </button>
         </div>
-        <div
-          className="input-group"
-          style={{ display: mode === 'language' ? 'none' : 'block' }}
-        >
+        <div className="input-group" style={fadeStyle(mode !== 'language')}>
           <label className="input-label">{mode === 'word' ? `New ${languageName} word` : 'Family Name'}</label>
           <input
             type="text"
@@ -119,18 +125,11 @@ export function AddWordModal({
             onChange={(e) => (mode === 'word' ? setWordText(e.target.value) : setNewFamilyName(e.target.value))}
             placeholder={mode === 'word' ? 'Type the word' : 'e.g. Colors, Furniture...'}
             autoFocus={mode !== 'language'}
+            tabIndex={mode !== 'language' ? 0 : -1}
             onKeyDown={(e) => e.key === 'Enter' && mode === 'family' && submitFamily()}
           />
         </div>
-        <div
-          className="input-group"
-          style={{
-            opacity: mode === 'word' ? 1 : 0,
-            pointerEvents: mode === 'word' ? 'auto' : 'none',
-            transition: 'opacity 0.3s ease',
-            display: mode === 'language' ? 'none' : 'block',
-          }}
-        >
+        <div className="input-group" style={fadeStyle(mode === 'word')}>
           <label className="input-label">Translation</label>
           <div className="input-field-wrapper">
             <input
@@ -154,15 +153,7 @@ export function AddWordModal({
             </button>
           </div>
         </div>
-        <div
-          className="input-group"
-          style={{
-            opacity: mode === 'word' ? 1 : 0,
-            pointerEvents: mode === 'word' ? 'auto' : 'none',
-            transition: 'opacity 0.3s ease',
-            display: mode === 'language' ? 'none' : 'block',
-          }}
-        >
+        <div className="input-group" style={fadeStyle(mode === 'word')}>
           <label className="input-label">Word type (optional)</label>
           <select
             className="input-field"
@@ -178,15 +169,7 @@ export function AddWordModal({
             ))}
           </select>
         </div>
-        <div
-          className="input-group"
-          style={{
-            opacity: mode === 'word' ? 1 : 0,
-            pointerEvents: mode === 'word' ? 'auto' : 'none',
-            transition: 'opacity 0.3s ease',
-            display: mode === 'language' ? 'none' : 'block',
-          }}
-        >
+        <div className="input-group" style={fadeStyle(mode === 'word')}>
           <label className="input-label">Family</label>
           <div className="family-chip-row">
             {familyNames.map((name) => (
@@ -219,33 +202,30 @@ export function AddWordModal({
             </div>
           )}
         </div>
-        {mode === 'language' && (
-          <>
-            <div className="input-group">
-              <label className="input-label">Language name</label>
-              <input
-                type="text"
-                className="input-field"
-                value={newLanguageName}
-                onChange={(e) => setNewLanguageName(e.target.value)}
-                placeholder="e.g. Italian"
-                autoFocus
-              />
-            </div>
-            <div className="input-group">
-              <label className="input-label">Language code (ISO 639-1)</label>
-              <input
-                type="text"
-                className="input-field"
-                value={newLanguageCode}
-                onChange={(e) => setNewLanguageCode(e.target.value)}
-                placeholder="e.g. it"
-                maxLength={5}
-                onKeyDown={(e) => e.key === 'Enter' && submitLanguage()}
-              />
-            </div>
-          </>
-        )}
+        <div className="input-group" style={fadeStyle(mode === 'language')}>
+          <label className="input-label">Language name</label>
+          <input
+            type="text"
+            className="input-field"
+            value={newLanguageName}
+            onChange={(e) => setNewLanguageName(e.target.value)}
+            placeholder="e.g. Italian"
+            tabIndex={mode === 'language' ? 0 : -1}
+          />
+        </div>
+        <div className="input-group" style={fadeStyle(mode === 'language')}>
+          <label className="input-label">Language code (ISO 639-1)</label>
+          <input
+            type="text"
+            className="input-field"
+            value={newLanguageCode}
+            onChange={(e) => setNewLanguageCode(e.target.value)}
+            placeholder="e.g. it"
+            maxLength={5}
+            tabIndex={mode === 'language' ? 0 : -1}
+            onKeyDown={(e) => e.key === 'Enter' && submitLanguage()}
+          />
+        </div>
         <div className="button-group">
           <button className="button button-secondary" onClick={onClose}>
             Cancel
