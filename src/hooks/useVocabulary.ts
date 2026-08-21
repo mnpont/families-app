@@ -20,6 +20,16 @@ export function useVocabulary(languageId: LanguageId | null) {
   const [familyNames, setFamilyNames] = useState<string[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
 
+  // Reset during render rather than in an effect, so a language switch clears
+  // stale words/families in the same pass instead of flashing them for a frame.
+  const [syncedLanguageId, setSyncedLanguageId] = useState(languageId);
+  if (languageId !== syncedLanguageId) {
+    setSyncedLanguageId(languageId);
+    setWords([]);
+    setFamilies({});
+    setFamilyNames([]);
+  }
+
   const reload = async (forLanguageId: LanguageId) => {
     try {
       setSyncStatus('syncing');
@@ -43,27 +53,26 @@ export function useVocabulary(languageId: LanguageId | null) {
   };
 
   useEffect(() => {
-    if (!languageId) {
-      setWords([]);
-      setFamilies({});
-      setFamilyNames([]);
-      return;
-    }
-    reload(languageId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (languageId) queueMicrotask(() => reload(languageId));
   }, [languageId]);
 
   const addWord = async (
     text: string,
     translationText: string,
     deckName: string,
-    partOfSpeech: string | null = null
+    partOfSpeech: string | null = null,
   ): Promise<boolean> => {
     if (!languageId || !text.trim() || !translationText.trim() || !deckName.trim()) return false;
 
     try {
       setSyncStatus('syncing');
-      await vocabularyApi.createWord(text.trim(), translationText.trim(), deckName.trim(), languageId, partOfSpeech);
+      await vocabularyApi.createWord(
+        text.trim(),
+        translationText.trim(),
+        deckName.trim(),
+        languageId,
+        partOfSpeech,
+      );
       await reload(languageId);
       return true;
     } catch (error) {
@@ -117,13 +126,19 @@ export function useVocabulary(languageId: LanguageId | null) {
     wordId: number,
     text: string,
     translationText: string,
-    partOfSpeech: string | null = null
+    partOfSpeech: string | null = null,
   ): Promise<boolean> => {
     if (!languageId || !text.trim() || !translationText.trim()) return false;
 
     try {
       setSyncStatus('syncing');
-      await vocabularyApi.updateWord(wordId, text.trim(), translationText.trim(), languageId, partOfSpeech);
+      await vocabularyApi.updateWord(
+        wordId,
+        text.trim(),
+        translationText.trim(),
+        languageId,
+        partOfSpeech,
+      );
       await reload(languageId);
       return true;
     } catch (error) {
@@ -170,7 +185,7 @@ export function useVocabulary(languageId: LanguageId | null) {
     const confirmed = window.confirm(
       `Delete "${familyName}"?\n\nThis will permanently delete ${wordsInFamily} word${
         wordsInFamily === 1 ? '' : 's'
-      }.\n\nThis action cannot be undone.`
+      }.\n\nThis action cannot be undone.`,
     );
 
     if (!confirmed) return false;
