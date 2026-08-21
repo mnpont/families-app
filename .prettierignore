@@ -1,0 +1,8 @@
+dist
+node_modules
+package-lock.json
+supabase/functions
+
+# Narrative docs, not code -- leave prose formatting alone.
+docs
+migrations/README.md

@@ -11,7 +11,7 @@ const SELECTED_LANGUAGE_KEY = 'selectedLanguageId';
 export function useLanguages() {
   const [languages, setLanguages] = useState<Language[]>([]);
   const [selectedLanguageId, setSelectedLanguageIdState] = useState<LanguageId | null>(
-    localStorage.getItem(SELECTED_LANGUAGE_KEY)
+    localStorage.getItem(SELECTED_LANGUAGE_KEY),
   );
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +49,11 @@ export function useLanguages() {
 
     try {
       await vocabularyApi.createLanguage(trimmedId, trimmedName);
-      setLanguages((current) => [...current, { id: trimmedId, name: trimmedName }].sort((a, b) => a.name.localeCompare(b.name)));
+      setLanguages((current) =>
+        [...current, { id: trimmedId, name: trimmedName }].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
+      );
       setSelectedLanguageId(trimmedId);
       return true;
     } catch (error) {

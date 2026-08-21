@@ -53,7 +53,9 @@ function toVocabWord(word: WordRow, deckName: string): VocabWord {
     partOfSpeech: word.part_of_speech,
     gender: word.gender as VocabWord['gender'],
     translation: translation ? { text: translation.text } : null,
-    exampleSentence: example ? { text: example.text, translationText: example.translation_text } : null,
+    exampleSentence: example
+      ? { text: example.text, translationText: example.translation_text }
+      : null,
     llmDistractors: word.llm_distractors,
     deckName,
     createdAt: word.created_at,
@@ -76,21 +78,22 @@ export async function createLanguage(id: LanguageId, name: string): Promise<void
 }
 
 export async function fetchVocabulary(languageId: LanguageId): Promise<VocabularySnapshot> {
-  const [{ data: words, error: wordsError }, { data: decks, error: decksError }] = await Promise.all([
-    supabase
-      .from('words')
-      .select(
-        'id, language_id, text, part_of_speech, gender, llm_distractors, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text)'
-      )
-      .eq('language_id', languageId)
-      .order('created_at', { ascending: true }),
-    supabase
-      .from('decks')
-      .select('id, name, deck_words(word_id)')
-      .eq('owner_id', OWNER_ID)
-      .eq('language_id', languageId)
-      .order('name', { ascending: true }),
-  ]);
+  const [{ data: words, error: wordsError }, { data: decks, error: decksError }] =
+    await Promise.all([
+      supabase
+        .from('words')
+        .select(
+          'id, language_id, text, part_of_speech, gender, llm_distractors, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text)',
+        )
+        .eq('language_id', languageId)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('decks')
+        .select('id, name, deck_words(word_id)')
+        .eq('owner_id', OWNER_ID)
+        .eq('language_id', languageId)
+        .order('name', { ascending: true }),
+    ]);
 
   if (wordsError) throw wordsError;
   if (decksError) throw decksError;
@@ -148,22 +151,31 @@ export async function createWord(
   translationText: string,
   deckName: string,
   languageId: LanguageId,
-  partOfSpeech: string | null = null
+  partOfSpeech: string | null = null,
 ): Promise<VocabWord> {
   const createdAt = new Date().toISOString();
   const gender = await resolveGender(text, languageId, partOfSpeech);
 
   const { data: word, error: wordError } = await supabase
     .from('words')
-    .insert({ language_id: languageId, text, part_of_speech: partOfSpeech, gender, created_at: createdAt })
+    .insert({
+      language_id: languageId,
+      text,
+      part_of_speech: partOfSpeech,
+      gender,
+      created_at: createdAt,
+    })
     .select('id, text, created_at')
     .single();
   if (wordError) throw wordError;
 
   const translationLanguage = detectTranslationLanguage(text, translationText);
-  const { error: translationError } = await supabase
-    .from('translations')
-    .insert({ word_id: word.id, language_id: translationLanguage, text: translationText, is_primary: true });
+  const { error: translationError } = await supabase.from('translations').insert({
+    word_id: word.id,
+    language_id: translationLanguage,
+    text: translationText,
+    is_primary: true,
+  });
   if (translationError) throw translationError;
 
   const deckId = await findOrCreateDeck(deckName, languageId);
@@ -194,10 +206,12 @@ export async function createWord(
       try {
         const { data: sentence, error: sentenceError } = await supabase.functions.invoke(
           'generate-example-sentence',
-          { body: { wordId: word.id } }
+          { body: { wordId: word.id } },
         );
         if (sentenceError) throw sentenceError;
-        return sentence?.text ? { text: sentence.text, translationText: sentence.translationText ?? null } : null;
+        return sentence?.text
+          ? { text: sentence.text, translationText: sentence.translationText ?? null }
+          : null;
       } catch (error) {
         console.error(`Error generating example sentence for word ${word.id}:`, error);
         return null;
@@ -205,11 +219,16 @@ export async function createWord(
     })(),
     (async (): Promise<VocabWord['llmDistractors']> => {
       try {
-        const { data: result, error: distractorsError } = await supabase.functions.invoke('generate-distractors', {
-          body: { wordId: word.id },
-        });
+        const { data: result, error: distractorsError } = await supabase.functions.invoke(
+          'generate-distractors',
+          {
+            body: { wordId: word.id },
+          },
+        );
         if (distractorsError) throw distractorsError;
-        return Array.isArray(result?.distractors) && result.distractors.length > 0 ? result.distractors : null;
+        return Array.isArray(result?.distractors) && result.distractors.length > 0
+          ? result.distractors
+          : null;
       } catch (error) {
         console.error(`Error generating distractors for word ${word.id}:`, error);
         return null;
@@ -247,7 +266,9 @@ export function refreshDistractorsInBackground(wordId: number): void {
 }
 
 export async function createDeck(name: string, languageId: LanguageId): Promise<void> {
-  const { error } = await supabase.from('decks').insert({ name, language_id: languageId, owner_id: OWNER_ID });
+  const { error } = await supabase
+    .from('decks')
+    .insert({ name, language_id: languageId, owner_id: OWNER_ID });
   if (error) throw error;
 }
 
@@ -262,7 +283,7 @@ export async function updateWord(
   text: string,
   translationText: string,
   languageId: LanguageId,
-  partOfSpeech: string | null = null
+  partOfSpeech: string | null = null,
 ): Promise<void> {
   const gender = await resolveGender(text, languageId, partOfSpeech);
 
@@ -280,7 +301,11 @@ export async function updateWord(
   if (translationError) throw translationError;
 }
 
-export async function moveWordToDeck(wordId: number, newDeckName: string, languageId: LanguageId): Promise<void> {
+export async function moveWordToDeck(
+  wordId: number,
+  newDeckName: string,
+  languageId: LanguageId,
+): Promise<void> {
   const deckId = await findOrCreateDeck(newDeckName, languageId);
 
   const { error: deleteError } = await supabase.from('deck_words').delete().eq('word_id', wordId);
@@ -292,7 +317,11 @@ export async function moveWordToDeck(wordId: number, newDeckName: string, langua
   if (insertError) throw insertError;
 }
 
-export async function renameDeck(oldName: string, newName: string, languageId: LanguageId): Promise<void> {
+export async function renameDeck(
+  oldName: string,
+  newName: string,
+  languageId: LanguageId,
+): Promise<void> {
   const { error } = await supabase
     .from('decks')
     .update({ name: newName })
@@ -343,7 +372,11 @@ function toReviewCard(row: ScheduleRow): ReviewCard {
     // would need an extra join through deck_words/decks that nothing in
     // the review UI renders.
     ...toVocabWord(row.words, ''),
-    schedule: { intervalDays: row.interval_days, easeFactor: row.ease_factor, reviewCount: row.review_count },
+    schedule: {
+      intervalDays: row.interval_days,
+      easeFactor: row.ease_factor,
+      reviewCount: row.review_count,
+    },
   };
 }
 
@@ -368,7 +401,7 @@ function toReviewCard(row: ScheduleRow): ReviewCard {
 export async function fetchReviewSession(
   languageId: LanguageId,
   now: Date = new Date(),
-  sessionCap: number = SESSION_CAP
+  sessionCap: number = SESSION_CAP,
 ): Promise<ReviewCard[]> {
   const nowIso = now.toISOString();
 
@@ -404,15 +437,24 @@ export async function fetchReviewSession(
 }
 
 /** Records a graded review: appends to the ReviewLog history and writes the scheduler's output as the word's new live state. */
-export async function submitReview(wordId: number, grade: Grade, next: ScheduleResult, now: Date = new Date()): Promise<void> {
+export async function submitReview(
+  wordId: number,
+  grade: Grade,
+  next: ScheduleResult,
+  now: Date = new Date(),
+): Promise<void> {
   // Neither write depends on the other's result, so run them concurrently
   // instead of one-after-the-other -- roughly halves the network wait a
   // learner sits through between questions (see PracticeView's transition,
   // which is otherwise held visibly at rest waiting on exactly this call).
   const [{ error: logError }, { error: stateError }] = await Promise.all([
-    supabase
-      .from('review_log')
-      .insert({ word_id: wordId, user_id: OWNER_ID, reviewed_at: now.toISOString(), grade, mode: 'recognition' }),
+    supabase.from('review_log').insert({
+      word_id: wordId,
+      user_id: OWNER_ID,
+      reviewed_at: now.toISOString(),
+      grade,
+      mode: 'recognition',
+    }),
     supabase
       .from('word_schedule_state')
       .update({

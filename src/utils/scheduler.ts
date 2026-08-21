@@ -64,8 +64,16 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /** Computes the next schedule state from the current one and a grade. Pure -- no I/O, no dates read internally. */
-export function schedule(current: ScheduleState, grade: Grade, now: Date = new Date()): ScheduleResult {
-  const easeFactor = clamp(current.easeFactor + EASE_DELTA[grade], MIN_EASE_FACTOR, MAX_EASE_FACTOR);
+export function schedule(
+  current: ScheduleState,
+  grade: Grade,
+  now: Date = new Date(),
+): ScheduleResult {
+  const easeFactor = clamp(
+    current.easeFactor + EASE_DELTA[grade],
+    MIN_EASE_FACTOR,
+    MAX_EASE_FACTOR,
+  );
 
   if (grade === 'again') {
     // Lapsed: back into the queue right away (due "soon", not after a

@@ -10,7 +10,13 @@ interface MultipleChoiceCardProps {
   onSelect: (option: string) => void;
 }
 
-export function MultipleChoiceCard({ prompt, options, correctAnswer, selected, onSelect }: MultipleChoiceCardProps) {
+export function MultipleChoiceCard({
+  prompt,
+  options,
+  correctAnswer,
+  selected,
+  onSelect,
+}: MultipleChoiceCardProps) {
   const answered = selected !== null;
 
   return (
@@ -20,7 +26,13 @@ export function MultipleChoiceCard({ prompt, options, correctAnswer, selected, o
         {options.map((option) => {
           const isCorrect = option === correctAnswer;
           const isWrongPick = answered && option === selected && !isCorrect;
-          const stateClass = answered ? (isCorrect ? 'correct' : isWrongPick ? 'wrong' : 'dim') : '';
+          const stateClass = answered
+            ? isCorrect
+              ? 'correct'
+              : isWrongPick
+                ? 'wrong'
+                : 'dim'
+            : '';
 
           return (
             <button

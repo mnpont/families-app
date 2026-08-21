@@ -51,7 +51,11 @@ export function FamilySelectorModal({
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && confirmNewFamily()}
             />
-            <button type="button" className="button button-primary family-chip-new-confirm" onClick={confirmNewFamily}>
+            <button
+              type="button"
+              className="button button-primary family-chip-new-confirm"
+              onClick={confirmNewFamily}
+            >
               Add
             </button>
           </div>

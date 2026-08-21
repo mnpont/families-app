@@ -19,7 +19,8 @@ import { isGenderEligible } from '../lib/genderApi';
  * verb/adjective as "missing" its gender.
  */
 function showsGenderChip(word: VocabWord): boolean {
-  if (!GENDER_LANGUAGES.includes(word.languageId) || !isGenderEligible(word.partOfSpeech)) return false;
+  if (!GENDER_LANGUAGES.includes(word.languageId) || !isGenderEligible(word.partOfSpeech))
+    return false;
   return word.gender !== null || word.partOfSpeech === 'noun';
 }
 
@@ -93,7 +94,10 @@ export function ExpandedFamilyModal({
             <div className="delete-confirm-bar family-delete-confirm">
               <span>Delete "{familyName}"?</span>
               <div className="delete-confirm-actions">
-                <button className="delete-confirm-cancel" onClick={() => setConfirmingDeleteFamily(false)}>
+                <button
+                  className="delete-confirm-cancel"
+                  onClick={() => setConfirmingDeleteFamily(false)}
+                >
                   Cancel
                 </button>
                 <button
@@ -111,11 +115,17 @@ export function ExpandedFamilyModal({
 
           {isEditMode && !confirmingDeleteFamily && (
             <div className="expanded-family-actions">
-              <button className="family-action-pill rename" onClick={() => onEditFamilyName(familyName)}>
+              <button
+                className="family-action-pill rename"
+                onClick={() => onEditFamilyName(familyName)}
+              >
                 <PencilIcon />
                 Rename
               </button>
-              <button className="family-action-pill delete" onClick={() => setConfirmingDeleteFamily(true)}>
+              <button
+                className="family-action-pill delete"
+                onClick={() => setConfirmingDeleteFamily(true)}
+              >
                 Delete family
               </button>
               <button className="edit-toggle-pill active" onClick={exitEditMode}>
@@ -130,7 +140,10 @@ export function ExpandedFamilyModal({
                 <div key={word.id} className="delete-confirm-bar word-delete-confirm">
                   <span>Delete "{word.text}"?</span>
                   <div className="delete-confirm-actions">
-                    <button className="delete-confirm-cancel" onClick={() => setConfirmingDeleteWordId(null)}>
+                    <button
+                      className="delete-confirm-cancel"
+                      onClick={() => setConfirmingDeleteWordId(null)}
+                    >
                       Cancel
                     </button>
                     <button
@@ -169,7 +182,8 @@ export function ExpandedFamilyModal({
                 )}
                 {isEditMode ? (
                   <div className="word-edit-line">
-                    {word.text} <span className="word-edit-translation">{word.translation?.text}</span>
+                    {word.text}{' '}
+                    <span className="word-edit-translation">{word.translation?.text}</span>
                   </div>
                 ) : (
                   <>
@@ -178,7 +192,9 @@ export function ExpandedFamilyModal({
                       {genderChip && (
                         <span
                           className={`word-gender-chip ${genderClass}`}
-                          {...(!word.gender ? { onClick: () => onEditWord(word), role: 'button', tabIndex: 0 } : {})}
+                          {...(!word.gender
+                            ? { onClick: () => onEditWord(word), role: 'button', tabIndex: 0 }
+                            : {})}
                         >
                           {genderLabel}
                         </span>
@@ -187,9 +203,14 @@ export function ExpandedFamilyModal({
                     <div className="word-translation">{word.translation?.text}</div>
                     {word.exampleSentence && (
                       <div className="word-example">
-                        <span className="word-example-text">{highlightWord(word.exampleSentence.text, word.text)}</span>
+                        <span className="word-example-text">
+                          {highlightWord(word.exampleSentence.text, word.text)}
+                        </span>
                         {word.exampleSentence.translationText && (
-                          <span className="word-example-translation"> — {word.exampleSentence.translationText}</span>
+                          <span className="word-example-translation">
+                            {' '}
+                            — {word.exampleSentence.translationText}
+                          </span>
                         )}
                       </div>
                     )}
@@ -200,7 +221,10 @@ export function ExpandedFamilyModal({
                     <button className="action-button edit" onClick={() => onEditWord(word)}>
                       <PencilIcon />
                     </button>
-                    <button className="action-button delete" onClick={() => setConfirmingDeleteWordId(word.id)}>
+                    <button
+                      className="action-button delete"
+                      onClick={() => setConfirmingDeleteWordId(word.id)}
+                    >
                       <DeleteIcon />
                     </button>
                   </div>

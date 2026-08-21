@@ -11,7 +11,10 @@ interface NavBarProps {
 export function NavBar({ view, onViewChange }: NavBarProps) {
   return (
     <div className="nav-bar">
-      <button className={`nav-button ${view === 'families' ? 'active' : ''}`} onClick={() => onViewChange('families')}>
+      <button
+        className={`nav-button ${view === 'families' ? 'active' : ''}`}
+        onClick={() => onViewChange('families')}
+      >
         <FamiliesIcon />
       </button>
       <button
@@ -20,7 +23,10 @@ export function NavBar({ view, onViewChange }: NavBarProps) {
       >
         <FlashcardsIcon />
       </button>
-      <button className={`nav-button ${view === 'practice' ? 'active' : ''}`} onClick={() => onViewChange('practice')}>
+      <button
+        className={`nav-button ${view === 'practice' ? 'active' : ''}`}
+        onClick={() => onViewChange('practice')}
+      >
         <PracticeIcon />
       </button>
     </div>

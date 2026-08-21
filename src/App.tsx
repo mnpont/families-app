@@ -51,7 +51,12 @@ export default function App() {
     setShowAddModal(true);
   };
 
-  const handleAddWord = async (text: string, translationText: string, familyName: string, partOfSpeech: WordType | null) => {
+  const handleAddWord = async (
+    text: string,
+    translationText: string,
+    familyName: string,
+    partOfSpeech: WordType | null,
+  ) => {
     const success = await addWord(text, translationText, familyName, partOfSpeech);
     if (success) setShowAddModal(false);
   };
@@ -76,7 +81,12 @@ export default function App() {
     setShowFamilySelector(null);
   };
 
-  const handleSaveEditWord = async (wordId: number, text: string, translationText: string, partOfSpeech: WordType | null) => {
+  const handleSaveEditWord = async (
+    wordId: number,
+    text: string,
+    translationText: string,
+    partOfSpeech: WordType | null,
+  ) => {
     const success = await saveEditWord(wordId, text, translationText, partOfSpeech);
     if (success) setEditingWord(null);
   };
@@ -146,7 +156,10 @@ export default function App() {
 
       {showFamilySelector !== null && expandedFamily && (
         <FamilySelectorModal
-          wordText={(families[expandedFamily] ?? []).find((word) => word.id === showFamilySelector)?.text ?? ''}
+          wordText={
+            (families[expandedFamily] ?? []).find((word) => word.id === showFamilySelector)?.text ??
+            ''
+          }
           familyNames={familyNames}
           currentFamily={expandedFamily}
           onClose={() => setShowFamilySelector(null)}
