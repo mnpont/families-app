@@ -8,6 +8,7 @@ interface AddWordModalProps {
   languageName: string;
   familyNames: string[];
   initialMode?: AddModalMode;
+  initialWordText?: string;
   onClose: () => void;
   onAddWord: (
     text: string,
@@ -26,13 +27,14 @@ export function AddWordModal({
   languageName,
   familyNames,
   initialMode = 'word',
+  initialWordText = '',
   onClose,
   onAddWord,
   onAddFamily,
   onAddLanguage,
 }: AddWordModalProps) {
   const [mode, setMode] = useState<AddModalMode>(initialMode);
-  const [wordText, setWordText] = useState('');
+  const [wordText, setWordText] = useState(initialWordText);
   const [translationText, setTranslationText] = useState('');
   const [wordType, setWordType] = useState<WordType | ''>('');
   const [newFamilyName, setNewFamilyName] = useState('');
