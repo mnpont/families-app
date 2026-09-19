@@ -29,7 +29,10 @@ export function FlashcardsView({ languageId }: FlashcardsViewProps) {
     );
   }
 
-  if (cards.length === 0) {
+  // `frozenCard` outlives the queue: grading removes the card optimistically
+  // (see useReviewSession), so the last card's animation would otherwise be
+  // cut off by the empty state the moment it's graded.
+  if (cards.length === 0 && !frozenCard) {
     return (
       <div className="empty-state">
         <div className="empty-state-title">All Caught Up</div>
