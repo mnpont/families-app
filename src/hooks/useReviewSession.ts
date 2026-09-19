@@ -15,18 +15,25 @@ import type { ReviewCard } from '../types/reviewCard';
  */
 export function useReviewSession(languageId: LanguageId | null) {
   const [cards, setCards] = useState<ReviewCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!languageId);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!languageId) {
-      setCards([]);
-      setLoading(false);
-      return;
-    }
+  // Reset during render rather than in an effect, so a language switch clears
+  // the stale queue in the same pass instead of flashing it for a frame.
+  const [syncedLanguageId, setSyncedLanguageId] = useState(languageId);
+  if (languageId !== syncedLanguageId) {
+    setSyncedLanguageId(languageId);
+    setCards([]);
+    setLoading(!!languageId);
+  }
 
+  useEffect(() => {
+    if (!languageId) return;
+
+    // loading is already true here: either the initial state (languageId set
+    // on mount) or the render-time reset above (languageId just changed to a
+    // truthy value) already set it before this effect runs.
     let cancelled = false;
-    setLoading(true);
     vocabularyApi
       .fetchReviewSession(languageId)
       .then((fetched) => {

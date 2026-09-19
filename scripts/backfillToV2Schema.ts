@@ -109,7 +109,11 @@ function freshCounters(): Counters {
 interface Sink {
   createWord(text: string, createdAt: string): Promise<number>;
   createTranslation(wordId: number, languageId: 'es' | 'en', text: string): Promise<void>;
-  createExampleSentence(wordId: number, text: string, translationText: string | null): Promise<void>;
+  createExampleSentence(
+    wordId: number,
+    text: string,
+    translationText: string | null,
+  ): Promise<void>;
   findOrCreateDeck(name: string): Promise<{ id: number; created: boolean }>;
   linkWordToDeck(deckId: number, wordId: number, addedAt: string): Promise<void>;
 }
@@ -158,10 +162,17 @@ class LiveSink implements Sink {
     if (error) throw error;
   }
 
-  async createExampleSentence(wordId: number, text: string, translationText: string | null): Promise<void> {
-    const { error } = await this.supabase
-      .from('example_sentences')
-      .insert({ word_id: wordId, language_id: LANGUAGE_ID, text, translation_text: translationText });
+  async createExampleSentence(
+    wordId: number,
+    text: string,
+    translationText: string | null,
+  ): Promise<void> {
+    const { error } = await this.supabase.from('example_sentences').insert({
+      word_id: wordId,
+      language_id: LANGUAGE_ID,
+      text,
+      translation_text: translationText,
+    });
     if (error) throw error;
   }
 
@@ -219,7 +230,11 @@ async function processRow(row: LegacyWordRow, sink: Sink, counters: Counters) {
   counters.translationsCreated++;
 
   if (row.example_sentence_de) {
-    await sink.createExampleSentence(wordId, row.example_sentence_de, row.example_sentence_en ?? null);
+    await sink.createExampleSentence(
+      wordId,
+      row.example_sentence_de,
+      row.example_sentence_en ?? null,
+    );
     counters.exampleSentencesCreated++;
   }
 
@@ -270,7 +285,10 @@ async function loadLegacyRows(source: 'local' | 'live'): Promise<LegacyWordRow[]
   // migrations/002_rename_legacy_words_table.sql has already renamed the
   // original table out of the way to make room for the new schema's Word
   // table (see migrations/README.md for the full order of operations).
-  const { data, error } = await supabase.from('words_legacy').select('*').order('id', { ascending: true });
+  const { data, error } = await supabase
+    .from('words_legacy')
+    .select('*')
+    .order('id', { ascending: true });
   if (error) throw error;
   return data as LegacyWordRow[];
 }
@@ -287,7 +305,9 @@ async function main() {
   }
 
   const rows = await loadLegacyRows(source);
-  console.log(`Loaded ${rows.length} legacy rows from ${source === 'local' ? 'src/data/preLoadedWords.ts' : 'the live `words` table'}.`);
+  console.log(
+    `Loaded ${rows.length} legacy rows from ${source === 'local' ? 'src/data/preLoadedWords.ts' : 'the live `words` table'}.`,
+  );
 
   const counters = freshCounters();
 

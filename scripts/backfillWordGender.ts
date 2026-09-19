@@ -59,7 +59,10 @@ async function main() {
       resolved++;
       console.log(`  ${word.text} -> ${gender}`);
       if (!DRY_RUN) {
-        const { error: updateError } = await supabase.from('words').update({ gender }).eq('id', word.id);
+        const { error: updateError } = await supabase
+          .from('words')
+          .update({ gender })
+          .eq('id', word.id);
         if (updateError) throw updateError;
       }
     } else {
@@ -69,7 +72,7 @@ async function main() {
   }
 
   console.log(
-    `\nDone${DRY_RUN ? ' (dry run, nothing written)' : ''}. Resolved ${resolved}, left unresolved ${unresolved} (not a noun, or Wikidata has no gender data for it -- those will show the "gender?" flag once tagged as a noun).`
+    `\nDone${DRY_RUN ? ' (dry run, nothing written)' : ''}. Resolved ${resolved}, left unresolved ${unresolved} (not a noun, or Wikidata has no gender data for it -- those will show the "gender?" flag once tagged as a noun).`,
   );
 }
 

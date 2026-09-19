@@ -37,11 +37,20 @@ export function PracticeView({ languageId }: PracticeViewProps) {
   const [answeredCount, setAnsweredCount] = useState(0);
   const initializedRef = useRef(false);
 
-  useEffect(() => {
-    initializedRef.current = false;
+  // Reset during render rather than in an effect, so a language switch clears
+  // stale progress/selection in the same pass instead of flashing it for a frame.
+  // (initializedRef is a ref, not state -- mutating it must stay in an effect,
+  // below, since refs can't be written during render.)
+  const [syncedLanguageId, setSyncedLanguageId] = useState(languageId);
+  if (languageId !== syncedLanguageId) {
+    setSyncedLanguageId(languageId);
     setAnsweredCount(0);
     setSelected(null);
     setFrozenQuestion(null);
+  }
+
+  useEffect(() => {
+    initializedRef.current = false;
   }, [languageId]);
 
   useEffect(() => {
@@ -119,7 +128,9 @@ export function PracticeView({ languageId }: PracticeViewProps) {
           onSelect={(option) => !isAnimating && !selected && setSelected(option)}
         />
 
-        <div className={`flashcard-nav practice-grade-row ${!selected ? 'flashcard-nav--pending' : ''}`}>
+        <div
+          className={`flashcard-nav practice-grade-row ${!selected ? 'flashcard-nav--pending' : ''}`}
+        >
           <GradeButtons onGrade={handleGrade} disabled={submitting || isAnimating} />
         </div>
       </div>

@@ -30,7 +30,10 @@ export function Header({
     <div className="header">
       <SyncStatusIndicator status={syncStatus} />
       <div className="header-title-group">
-        <div className="app-title app-title--clickable" onClick={() => setLanguageBarOpen((open) => !open)}>
+        <div
+          className="app-title app-title--clickable"
+          onClick={() => setLanguageBarOpen((open) => !open)}
+        >
           Families
         </div>
         <div className={`language-bar ${languageBarOpen ? 'language-bar--open' : ''}`}>

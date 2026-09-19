@@ -38,10 +38,13 @@ export function pickDistractors(
   correctWordId: number,
   correctText: string,
   count = 3,
-  options: PickDistractorsOptions = {}
+  options: PickDistractorsOptions = {},
 ): string[] {
   const { preferredDeckName, preferredPartOfSpeech, exclude = [] } = options;
-  const seen = new Set<string>([correctText.trim().toLowerCase(), ...exclude.map((text) => text.trim().toLowerCase())]);
+  const seen = new Set<string>([
+    correctText.trim().toLowerCase(),
+    ...exclude.map((text) => text.trim().toLowerCase()),
+  ]);
   const candidates: DistractorCandidate[] = [];
 
   for (const candidate of pool) {

@@ -11,7 +11,11 @@ interface LanguageSelectorProps {
  * no language name/code is ever written into this component, so a new row
  * (e.g. Italian/'it') shows up here with zero code changes.
  */
-export function LanguageSelector({ languages, selectedLanguageId, onChange }: LanguageSelectorProps) {
+export function LanguageSelector({
+  languages,
+  selectedLanguageId,
+  onChange,
+}: LanguageSelectorProps) {
   if (languages.length === 0) return null;
 
   return (

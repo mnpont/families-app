@@ -35,7 +35,10 @@ interface MyMemoryResponse {
  * failure -- "no match" is a normal, expected outcome (e.g. an obscure
  * word, or a language MyMemory doesn't cover well), not an error.
  */
-export async function lookupTranslation(text: string, languageId: LanguageId): Promise<string | null> {
+export async function lookupTranslation(
+  text: string,
+  languageId: LanguageId,
+): Promise<string | null> {
   const targetLanguageId = targetLanguageFor(languageId);
   const params = new URLSearchParams({ q: text, langpair: `${languageId}|${targetLanguageId}` });
 

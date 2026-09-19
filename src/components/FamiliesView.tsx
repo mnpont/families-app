@@ -7,7 +7,12 @@ interface FamiliesViewProps {
   onSelectFamily: (name: string) => void;
 }
 
-export function FamiliesView({ families, familyNames, hasAnyContent, onSelectFamily }: FamiliesViewProps) {
+export function FamiliesView({
+  families,
+  familyNames,
+  hasAnyContent,
+  onSelectFamily,
+}: FamiliesViewProps) {
   if (!hasAnyContent) {
     return (
       <div className="empty-state">
@@ -25,7 +30,11 @@ export function FamiliesView({ families, familyNames, hasAnyContent, onSelectFam
         const overflowCount = words.length - previewWords.length;
 
         return (
-          <div key={familyName} className="family-list-row" onClick={() => onSelectFamily(familyName)}>
+          <div
+            key={familyName}
+            className="family-list-row"
+            onClick={() => onSelectFamily(familyName)}
+          >
             <div>
               <div className="family-list-name">{familyName}</div>
               <div className="family-list-count">
@@ -37,7 +46,9 @@ export function FamiliesView({ families, familyNames, hasAnyContent, onSelectFam
                     {word.text}
                   </div>
                 ))}
-                {overflowCount > 0 && <div className="family-list-chip overflow">+{overflowCount}</div>}
+                {overflowCount > 0 && (
+                  <div className="family-list-chip overflow">+{overflowCount}</div>
+                )}
               </div>
             </div>
             <div className="family-list-chevron">&rsaquo;</div>

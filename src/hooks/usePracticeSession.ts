@@ -60,18 +60,25 @@ export function usePracticeSession(languageId: LanguageId | null) {
   // this map recovers it from the same vocabulary fetch that builds the distractor pool,
   // so distractors can be preferentially drawn from the correct answer's own deck.
   const [deckByWordId, setDeckByWordId] = useState<Map<number, string>>(new Map());
-  const [poolLoading, setPoolLoading] = useState(true);
+  const [poolLoading, setPoolLoading] = useState(!!languageId);
+
+  // Reset during render rather than in an effect, so a language switch clears
+  // the stale pool in the same pass instead of flashing it for a frame.
+  const [syncedLanguageId, setSyncedLanguageId] = useState(languageId);
+  if (languageId !== syncedLanguageId) {
+    setSyncedLanguageId(languageId);
+    setPool([]);
+    setDeckByWordId(new Map());
+    setPoolLoading(!!languageId);
+  }
 
   useEffect(() => {
-    if (!languageId) {
-      setPool([]);
-      setDeckByWordId(new Map());
-      setPoolLoading(false);
-      return;
-    }
+    if (!languageId) return;
 
+    // poolLoading is already true here: either the initial state (languageId
+    // set on mount) or the render-time reset above (languageId just changed
+    // to a truthy value) already set it before this effect runs.
     let cancelled = false;
-    setPoolLoading(true);
     vocabularyApi
       .fetchVocabulary(languageId)
       .then((snapshot) => {
@@ -104,7 +111,10 @@ export function usePracticeSession(languageId: LanguageId | null) {
       const correctAnswer = card.translation?.text;
       if (!correctAnswer) return [];
 
-      const llmDistractors = sanitizeLlmDistractors(card.llmDistractors, correctAnswer).slice(0, OPTION_COUNT - 1);
+      const llmDistractors = sanitizeLlmDistractors(card.llmDistractors, correctAnswer).slice(
+        0,
+        OPTION_COUNT - 1,
+      );
       const stillNeeded = OPTION_COUNT - 1 - llmDistractors.length;
       const heuristicDistractors =
         stillNeeded > 0
@@ -132,5 +142,10 @@ export function usePracticeSession(languageId: LanguageId | null) {
     await submitGrade(wordId, grade);
   };
 
-  return { questions, loading: loadingCards || poolLoading, submitting, submitGrade: submitGradeAndRefresh };
+  return {
+    questions,
+    loading: loadingCards || poolLoading,
+    submitting,
+    submitGrade: submitGradeAndRefresh,
+  };
 }

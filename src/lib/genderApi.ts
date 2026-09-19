@@ -43,20 +43,26 @@ function escapeForSparqlString(text: string): string {
   return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-async function sparqlSelect(query: string): Promise<{ bindings: Record<string, { value: string }>[] } | null> {
+async function sparqlSelect(
+  query: string,
+): Promise<{ bindings: Record<string, { value: string }>[] } | null> {
   try {
-    const response = await fetch(`${SPARQL_ENDPOINT}?${new URLSearchParams({ query, format: 'json' })}`, {
-      headers: {
-        Accept: 'application/sparql-results+json',
-        // Wikimedia's API etiquette policy 403s requests with no descriptive
-        // User-Agent. Browsers silently ignore this (it's a forbidden header
-        // there, and the browser's own UA already satisfies the policy) --
-        // this only matters for non-browser callers (scripts/backfillWordGender.ts).
-        'User-Agent': USER_AGENT,
+    const response = await fetch(
+      `${SPARQL_ENDPOINT}?${new URLSearchParams({ query, format: 'json' })}`,
+      {
+        headers: {
+          Accept: 'application/sparql-results+json',
+          // Wikimedia's API etiquette policy 403s requests with no descriptive
+          // User-Agent. Browsers silently ignore this (it's a forbidden header
+          // there, and the browser's own UA already satisfies the policy) --
+          // this only matters for non-browser callers (scripts/backfillWordGender.ts).
+          'User-Agent': USER_AGENT,
+        },
       },
-    });
+    );
     if (!response.ok) return null;
-    const data: { results?: { bindings: Record<string, { value: string }>[] } } = await response.json();
+    const data: { results?: { bindings: Record<string, { value: string }>[] } } =
+      await response.json();
     return { bindings: data.results?.bindings ?? [] };
   } catch (error) {
     console.error('Error querying Wikidata:', error);
@@ -79,7 +85,7 @@ async function resolveLanguageQid(languageId: LanguageId): Promise<string | null
   if (cached) return cached;
 
   const result = await sparqlSelect(
-    `SELECT ?lang WHERE { ?lang wdt:${ISO_639_1_PROPERTY} "${escapeForSparqlString(languageId)}" . } LIMIT 1`
+    `SELECT ?lang WHERE { ?lang wdt:${ISO_639_1_PROPERTY} "${escapeForSparqlString(languageId)}" . } LIMIT 1`,
   );
   const uri = result?.bindings[0]?.lang?.value;
   const qid = uri?.split('/').pop();
@@ -129,7 +135,11 @@ function caseVariants(word: string): string[] {
  * wrongly tag the whole phrase -- see resolveGender for which call sites
  * are allowed to pass true.
  */
-export async function lookupGender(text: string, languageId: LanguageId, caseFlexible: boolean): Promise<Gender | null> {
+export async function lookupGender(
+  text: string,
+  languageId: LanguageId,
+  caseFlexible: boolean,
+): Promise<Gender | null> {
   const languageQid = await resolveLanguageQid(languageId);
   const trimmed = text.trim();
   if (!languageQid || !trimmed) return null;
@@ -223,7 +233,7 @@ export function isGenderEligible(partOfSpeech: string | null | undefined): boole
 export async function resolveGender(
   text: string,
   languageId: LanguageId,
-  partOfSpeech: string | null = null
+  partOfSpeech: string | null = null,
 ): Promise<Gender | null> {
   if (!isGenderEligible(partOfSpeech)) return null;
 

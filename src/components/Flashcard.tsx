@@ -17,13 +17,19 @@ export function Flashcard({ word, className, isFlipped, onClick }: FlashcardProp
           <div className={`flashcard-text ${getFontSizeClass(word?.text)}`}>{word?.text}</div>
         </div>
         <div className="flashcard-face flashcard-back">
-          <div className={`flashcard-text ${getFontSizeClass(word?.translation?.text)}`}>{word?.translation?.text}</div>
+          <div className={`flashcard-text ${getFontSizeClass(word?.translation?.text)}`}>
+            {word?.translation?.text}
+          </div>
           {word?.exampleSentence && (
             <>
               <div className="flashcard-divider" />
-              <div className="flashcard-example">{highlightWord(word.exampleSentence.text, word.text)}</div>
+              <div className="flashcard-example">
+                {highlightWord(word.exampleSentence.text, word.text)}
+              </div>
               {word.exampleSentence.translationText && (
-                <div className="flashcard-example-translation">{word.exampleSentence.translationText}</div>
+                <div className="flashcard-example-translation">
+                  {word.exampleSentence.translationText}
+                </div>
               )}
             </>
           )}

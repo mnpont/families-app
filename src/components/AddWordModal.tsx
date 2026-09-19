@@ -9,7 +9,12 @@ interface AddWordModalProps {
   familyNames: string[];
   initialMode?: AddModalMode;
   onClose: () => void;
-  onAddWord: (text: string, translationText: string, familyName: string, partOfSpeech: WordType | null) => void;
+  onAddWord: (
+    text: string,
+    translationText: string,
+    familyName: string,
+    partOfSpeech: WordType | null,
+  ) => void;
   onAddFamily: (name: string) => void;
   onAddLanguage: (id: string, name: string) => void;
 }
@@ -91,34 +96,51 @@ export function AddWordModal({
   };
 
   const submit = mode === 'word' ? submitWord : mode === 'family' ? submitFamily : submitLanguage;
-  const submitLabel = mode === 'word' ? 'Add Word' : mode === 'family' ? 'Add Family' : 'Add Language';
+  const submitLabel =
+    mode === 'word' ? 'Add Word' : mode === 'family' ? 'Add Family' : 'Add Language';
   // A freshly-typed-but-not-yet-created family (via the inline "+ New family" row) won't be in
   // familyNames until the word is actually submitted -- keep it selectable in the dropdown anyway.
-  const familyOptions = selectedFamily && !familyNames.includes(selectedFamily) ? [...familyNames, selectedFamily] : familyNames;
+  const familyOptions =
+    selectedFamily && !familyNames.includes(selectedFamily)
+      ? [...familyNames, selectedFamily]
+      : familyNames;
 
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-toggle">
-          <button className={`modal-toggle-option ${mode === 'word' ? 'active' : ''}`} onClick={() => setMode('word')}>
+          <button
+            className={`modal-toggle-option ${mode === 'word' ? 'active' : ''}`}
+            onClick={() => setMode('word')}
+          >
             Add Word
           </button>
-          <button className={`modal-toggle-option ${mode === 'family' ? 'active' : ''}`} onClick={() => setMode('family')}>
+          <button
+            className={`modal-toggle-option ${mode === 'family' ? 'active' : ''}`}
+            onClick={() => setMode('family')}
+          >
             Add Family
           </button>
-          <button className={`modal-toggle-option ${mode === 'language' ? 'active' : ''}`} onClick={() => setMode('language')}>
+          <button
+            className={`modal-toggle-option ${mode === 'language' ? 'active' : ''}`}
+            onClick={() => setMode('language')}
+          >
             Add Language
           </button>
         </div>
         <div className="modal-fields">
           {mode !== 'language' && (
             <div className="input-group">
-              <label className="input-label">{mode === 'word' ? `New ${languageName} word` : 'Family Name'}</label>
+              <label className="input-label">
+                {mode === 'word' ? `New ${languageName} word` : 'Family Name'}
+              </label>
               <input
                 type="text"
                 className="input-field"
                 value={mode === 'word' ? wordText : newFamilyName}
-                onChange={(e) => (mode === 'word' ? setWordText(e.target.value) : setNewFamilyName(e.target.value))}
+                onChange={(e) =>
+                  mode === 'word' ? setWordText(e.target.value) : setNewFamilyName(e.target.value)
+                }
                 placeholder={mode === 'word' ? 'Type the word' : 'e.g. Colors, Furniture...'}
                 autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && mode === 'family' && submitFamily()}
@@ -151,7 +173,11 @@ export function AddWordModal({
               </div>
               <div className="input-group">
                 <label className="input-label">Word type (optional)</label>
-                <select className="input-field" value={wordType} onChange={(e) => setWordType(e.target.value as WordType | '')}>
+                <select
+                  className="input-field"
+                  value={wordType}
+                  onChange={(e) => setWordType(e.target.value as WordType | '')}
+                >
                   <option value="">Not set</option>
                   {WORD_TYPES.map((type) => (
                     <option key={type} value={type}>
@@ -162,14 +188,22 @@ export function AddWordModal({
               </div>
               <div className="input-group">
                 <label className="input-label">Family</label>
-                <select className="input-field" value={selectedFamily} onChange={(e) => setSelectedFamily(e.target.value)}>
+                <select
+                  className="input-field"
+                  value={selectedFamily}
+                  onChange={(e) => setSelectedFamily(e.target.value)}
+                >
                   {familyOptions.map((name) => (
                     <option key={name} value={name}>
                       {name}
                     </option>
                   ))}
                 </select>
-                <button type="button" className="family-add-link" onClick={() => setNewFamilyChipOpen((open) => !open)}>
+                <button
+                  type="button"
+                  className="family-add-link"
+                  onClick={() => setNewFamilyChipOpen((open) => !open)}
+                >
                   + New family
                 </button>
                 {newFamilyChipOpen && (
@@ -183,7 +217,11 @@ export function AddWordModal({
                       autoFocus
                       onKeyDown={(e) => e.key === 'Enter' && confirmNewFamilyChip()}
                     />
-                    <button type="button" className="button button-primary family-chip-new-confirm" onClick={confirmNewFamilyChip}>
+                    <button
+                      type="button"
+                      className="button button-primary family-chip-new-confirm"
+                      onClick={confirmNewFamilyChip}
+                    >
                       Add
                     </button>
                   </div>

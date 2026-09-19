@@ -1,6 +1,10 @@
 import type { Grade } from '../types/models';
 
-const GRADE_BUTTONS: { grade: Grade; label: string; variant: 'button-secondary' | 'button-primary' }[] = [
+const GRADE_BUTTONS: {
+  grade: Grade;
+  label: string;
+  variant: 'button-secondary' | 'button-primary';
+}[] = [
   { grade: 'again', label: 'Again', variant: 'button-secondary' },
   { grade: 'hard', label: 'Hard', variant: 'button-secondary' },
   { grade: 'good', label: 'Good', variant: 'button-primary' },
@@ -17,7 +21,12 @@ export function GradeButtons({ onGrade, disabled }: GradeButtonsProps) {
   return (
     <>
       {GRADE_BUTTONS.map(({ grade, label, variant }) => (
-        <button key={grade} className={`button ${variant}`} onClick={() => onGrade(grade)} disabled={disabled}>
+        <button
+          key={grade}
+          className={`button ${variant}`}
+          onClick={() => onGrade(grade)}
+          disabled={disabled}
+        >
           {label}
         </button>
       ))}

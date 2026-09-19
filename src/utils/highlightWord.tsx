@@ -27,7 +27,9 @@ export function highlightWord(sentence: string, targetWord: string | undefined) 
     if (!candidate || !matchRegex(candidate).test(sentence)) continue;
 
     const parts = sentence.split(matchRegex(candidate));
-    return parts.map((part, i) => (matchRegex(candidate).test(part) ? <strong key={i}>{part}</strong> : part));
+    return parts.map((part, i) =>
+      matchRegex(candidate).test(part) ? <strong key={i}>{part}</strong> : part,
+    );
   }
 
   return sentence;
