@@ -6,6 +6,7 @@ interface SearchResultsListProps {
   results: VocabWord[];
   onSelectWord: (word: VocabWord) => void;
   onAddWord: (query: string) => void;
+  onBack: () => void;
 }
 
 export function SearchResultsList({
@@ -13,6 +14,7 @@ export function SearchResultsList({
   results,
   onSelectWord,
   onAddWord,
+  onBack,
 }: SearchResultsListProps) {
   const trimmed = query.trim();
 
@@ -22,6 +24,9 @@ export function SearchResultsList({
         <div className="word-search-empty-text">No word matches &ldquo;{trimmed}&rdquo;</div>
         <button type="button" className="word-search-add-button" onClick={() => onAddWord(trimmed)}>
           Add &ldquo;{trimmed}&rdquo;
+        </button>
+        <button type="button" className="word-search-back" onClick={onBack}>
+          Back
         </button>
       </div>
     );
@@ -40,6 +45,11 @@ export function SearchResultsList({
           <div className="word-search-family">{word.deckName}</div>
         </div>
       ))}
+      <div className="word-search-back-row">
+        <button type="button" className="word-search-back" onClick={onBack}>
+          Back
+        </button>
+      </div>
     </div>
   );
 }

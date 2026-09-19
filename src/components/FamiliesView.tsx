@@ -207,6 +207,7 @@ export function FamiliesView({
           results={results}
           onSelectWord={(word) => onSelectFamily(word.deckName)}
           onAddWord={onAddWordWithText}
+          onBack={close}
         />
       ) : (
         <div className="family-list">

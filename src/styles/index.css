@@ -454,6 +454,32 @@ body::after {
   box-shadow: 0 6px 24px rgba(255, 154, 158, 0.4);
 }
 
+.word-search-back {
+  border: none;
+  background: none;
+  padding: 6px 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.word-search-back:hover {
+  color: #666;
+}
+
+.word-search-empty .word-search-back {
+  margin-top: 10px;
+}
+
+.word-search-back-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 22px;
+}
+
 @media (min-width: 700px) {
   .word-search-bar-wrap,
   .word-search-results {
