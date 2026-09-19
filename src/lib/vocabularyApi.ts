@@ -146,6 +146,24 @@ async function findOrCreateDeck(name: string, languageId: LanguageId): Promise<n
   return inserted.id;
 }
 
+/**
+ * Fire-and-forget, exactly like refreshDistractorsInBackground below: the
+ * caller (useVocabulary.addWord) always follows createWord with a full
+ * reload() and never reads its returned exampleSentence/llmDistractors, so
+ * there is nothing to gain by making the user wait on these -- an LLM call
+ * is the slowest part of adding a word by a wide margin. A gap left here is
+ * swept up later by the batch-generate-sentences / batch-generate-
+ * distractors Edge Functions.
+ */
+function generateEnrichmentInBackground(wordId: number): void {
+  supabase.functions.invoke('generate-example-sentence', { body: { wordId } }).catch((error) => {
+    console.error(`Error generating example sentence for word ${wordId}:`, error);
+  });
+  supabase.functions.invoke('generate-distractors', { body: { wordId } }).catch((error) => {
+    console.error(`Error generating distractors for word ${wordId}:`, error);
+  });
+}
+
 export async function createWord(
   text: string,
   translationText: string,
@@ -154,7 +172,13 @@ export async function createWord(
   partOfSpeech: string | null = null,
 ): Promise<VocabWord> {
   const createdAt = new Date().toISOString();
-  const gender = await resolveGender(text, languageId, partOfSpeech);
+
+  // Neither depends on the other, or on the word row -- resolve concurrently
+  // instead of one after another.
+  const [gender, deckId] = await Promise.all([
+    resolveGender(text, languageId, partOfSpeech),
+    findOrCreateDeck(deckName, languageId),
+  ]);
 
   const { data: word, error: wordError } = await supabase
     .from('words')
@@ -170,71 +194,41 @@ export async function createWord(
   if (wordError) throw wordError;
 
   const translationLanguage = detectTranslationLanguage(text, translationText);
-  const { error: translationError } = await supabase.from('translations').insert({
-    word_id: word.id,
-    language_id: translationLanguage,
-    text: translationText,
-    is_primary: true,
-  });
-  if (translationError) throw translationError;
-
-  const deckId = await findOrCreateDeck(deckName, languageId);
-  const { error: linkError } = await supabase
-    .from('deck_words')
-    .insert({ deck_id: deckId, word_id: word.id, added_at: createdAt });
-  if (linkError) throw linkError;
-
   // Every Word gets a schedule row at creation time so it enters the review
   // queue immediately (due_at = now), regardless of which path created it.
   const defaults = defaultScheduleState();
-  const { error: scheduleError } = await supabase.from('word_schedule_state').insert({
-    word_id: word.id,
-    user_id: OWNER_ID,
-    interval_days: defaults.intervalDays,
-    ease_factor: defaults.easeFactor,
-    due_at: createdAt,
-    review_count: defaults.reviewCount,
-  });
+
+  // Each of these three only depends on word.id (and the deckId already
+  // resolved above), not on each other -- run concurrently rather than as
+  // three sequential round-trips. None of this is transactional regardless
+  // (a partial failure here always could have left an inconsistent row set,
+  // same as before), so running them together doesn't trade away any
+  // consistency guarantee that existed.
+  const [{ error: translationError }, { error: linkError }, { error: scheduleError }] =
+    await Promise.all([
+      supabase.from('translations').insert({
+        word_id: word.id,
+        language_id: translationLanguage,
+        text: translationText,
+        is_primary: true,
+      }),
+      supabase
+        .from('deck_words')
+        .insert({ deck_id: deckId, word_id: word.id, added_at: createdAt }),
+      supabase.from('word_schedule_state').insert({
+        word_id: word.id,
+        user_id: OWNER_ID,
+        interval_days: defaults.intervalDays,
+        ease_factor: defaults.easeFactor,
+        due_at: createdAt,
+        review_count: defaults.reviewCount,
+      }),
+    ]);
+  if (translationError) throw translationError;
+  if (linkError) throw linkError;
   if (scheduleError) throw scheduleError;
 
-  // Best-effort, run concurrently: an LLM outage or a missing/rate-limited
-  // API key must not block the word itself from being saved, and neither
-  // call depends on the other. A gap left here can be swept up later by the
-  // batch-generate-sentences / batch-generate-distractors Edge Functions.
-  const [exampleSentence, llmDistractors] = await Promise.all([
-    (async (): Promise<VocabWord['exampleSentence']> => {
-      try {
-        const { data: sentence, error: sentenceError } = await supabase.functions.invoke(
-          'generate-example-sentence',
-          { body: { wordId: word.id } },
-        );
-        if (sentenceError) throw sentenceError;
-        return sentence?.text
-          ? { text: sentence.text, translationText: sentence.translationText ?? null }
-          : null;
-      } catch (error) {
-        console.error(`Error generating example sentence for word ${word.id}:`, error);
-        return null;
-      }
-    })(),
-    (async (): Promise<VocabWord['llmDistractors']> => {
-      try {
-        const { data: result, error: distractorsError } = await supabase.functions.invoke(
-          'generate-distractors',
-          {
-            body: { wordId: word.id },
-          },
-        );
-        if (distractorsError) throw distractorsError;
-        return Array.isArray(result?.distractors) && result.distractors.length > 0
-          ? result.distractors
-          : null;
-      } catch (error) {
-        console.error(`Error generating distractors for word ${word.id}:`, error);
-        return null;
-      }
-    })(),
-  ]);
+  generateEnrichmentInBackground(word.id);
 
   return {
     id: word.id,
@@ -243,8 +237,8 @@ export async function createWord(
     partOfSpeech,
     gender,
     translation: { text: translationText },
-    exampleSentence,
-    llmDistractors,
+    exampleSentence: null,
+    llmDistractors: null,
     deckName,
     createdAt: word.created_at,
   };
