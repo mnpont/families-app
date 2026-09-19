@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { lookupTranslation } from '../lib/lookupApi';
 import { SearchIcon } from './icons/SearchIcon';
 import { WORD_TYPES, type LanguageId, type WordType } from '../types/models';
@@ -15,7 +15,7 @@ interface AddWordModalProps {
     translationText: string,
     familyName: string,
     partOfSpeech: WordType | null,
-  ) => void;
+  ) => Promise<boolean>;
   onAddFamily: (name: string) => void;
   onAddLanguage: (id: string, name: string) => void;
 }
@@ -44,13 +44,22 @@ export function AddWordModal({
   const [newFamilyChipText, setNewFamilyChipText] = useState('');
   const [newLanguageName, setNewLanguageName] = useState('');
   const [newLanguageCode, setNewLanguageCode] = useState('');
+  const [isSubmittingWord, setIsSubmittingWord] = useState(false);
+  const wordInputRef = useRef<HTMLInputElement>(null);
 
-  const submitWord = () => {
-    if (!selectedFamily) return;
-    onAddWord(wordText, translationText, selectedFamily, wordType || null);
-    setWordText('');
-    setTranslationText('');
-    setWordType('');
+  const submitWord = async () => {
+    if (!selectedFamily || isSubmittingWord) return;
+    setIsSubmittingWord(true);
+    const success = await onAddWord(wordText, translationText, selectedFamily, wordType || null);
+    setIsSubmittingWord(false);
+    // Only clear on confirmed success -- clearing eagerly would lose the
+    // user's input if the save actually failed (see useVocabulary.addWord).
+    if (success) {
+      setWordText('');
+      setTranslationText('');
+      setWordType('');
+      wordInputRef.current?.focus();
+    }
   };
 
   const submitFamily = () => {
@@ -137,6 +146,7 @@ export function AddWordModal({
                 {mode === 'word' ? `New ${languageName} word` : 'Family Name'}
               </label>
               <input
+                ref={wordInputRef}
                 type="text"
                 className="input-field"
                 value={mode === 'word' ? wordText : newFamilyName}
@@ -263,8 +273,12 @@ export function AddWordModal({
           <button className="button button-secondary" onClick={onClose}>
             Cancel
           </button>
-          <button className="button button-primary" onClick={submit}>
-            {submitLabel}
+          <button
+            className="button button-primary"
+            onClick={submit}
+            disabled={mode === 'word' && isSubmittingWord}
+          >
+            {mode === 'word' && isSubmittingWord ? 'Adding…' : submitLabel}
           </button>
         </div>
       </div>

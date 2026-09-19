@@ -61,16 +61,6 @@ export default function App() {
     setShowAddModal(true);
   };
 
-  const handleAddWord = async (
-    text: string,
-    translationText: string,
-    familyName: string,
-    partOfSpeech: WordType | null,
-  ) => {
-    const success = await addWord(text, translationText, familyName, partOfSpeech);
-    if (success) setShowAddModal(false);
-  };
-
   const handleAddFamily = (name: string) => {
     const success = addFamily(name, families);
     if (success) setShowAddModal(false);
@@ -148,7 +138,7 @@ export default function App() {
           initialMode={addModalMode}
           initialWordText={addModalInitialWordText}
           onClose={() => setShowAddModal(false)}
-          onAddWord={handleAddWord}
+          onAddWord={addWord}
           onAddFamily={handleAddFamily}
           onAddLanguage={handleAddLanguage}
         />
