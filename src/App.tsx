@@ -20,6 +20,7 @@ export default function App() {
   const [view, setView] = useState<View>('families');
   const [showAddModal, setShowAddModal] = useState(false);
   const [addModalMode, setAddModalMode] = useState<'word' | 'family'>('word');
+  const [addModalInitialWordText, setAddModalInitialWordText] = useState('');
   const [expandedFamily, setExpandedFamily] = useState<string | null>(null);
   const [showFamilySelector, setShowFamilySelector] = useState<number | null>(null);
   const [editingWord, setEditingWord] = useState<VocabWord | null>(null);
@@ -29,6 +30,7 @@ export default function App() {
   const selectedLanguageName = languages.find((l) => l.id === selectedLanguageId)?.name ?? '';
 
   const {
+    words,
     families,
     familyNames,
     syncStatus,
@@ -43,22 +45,20 @@ export default function App() {
 
   const handleOpenAddWord = () => {
     setAddModalMode('word');
+    setAddModalInitialWordText('');
     setShowAddModal(true);
   };
 
   const handleOpenAddFamily = () => {
     setAddModalMode('family');
+    setAddModalInitialWordText('');
     setShowAddModal(true);
   };
 
-  const handleAddWord = async (
-    text: string,
-    translationText: string,
-    familyName: string,
-    partOfSpeech: WordType | null,
-  ) => {
-    const success = await addWord(text, translationText, familyName, partOfSpeech);
-    if (success) setShowAddModal(false);
+  const handleAddWordFromSearch = (text: string) => {
+    setAddModalMode('word');
+    setAddModalInitialWordText(text);
+    setShowAddModal(true);
   };
 
   const handleAddFamily = (name: string) => {
@@ -110,20 +110,25 @@ export default function App() {
         onAddFamilyClick={handleOpenAddFamily}
       />
 
-      <div className="content">
-        {view === 'families' && (
-          <FamiliesView
-            families={families}
-            familyNames={familyNames}
-            hasAnyContent={familyNames.length > 0}
-            onSelectFamily={setExpandedFamily}
-          />
-        )}
+      {view === 'families' && (
+        <FamiliesView
+          languageId={selectedLanguageId}
+          words={words}
+          families={families}
+          familyNames={familyNames}
+          hasAnyContent={familyNames.length > 0}
+          onSelectFamily={setExpandedFamily}
+          onAddWordWithText={handleAddWordFromSearch}
+        />
+      )}
 
-        {view === 'flashcards' && <FlashcardsView languageId={selectedLanguageId} />}
+      {view !== 'families' && (
+        <div className="content">
+          {view === 'flashcards' && <FlashcardsView languageId={selectedLanguageId} />}
 
-        {view === 'practice' && <PracticeView languageId={selectedLanguageId} />}
-      </div>
+          {view === 'practice' && <PracticeView languageId={selectedLanguageId} />}
+        </div>
+      )}
 
       {showAddModal && (
         <AddWordModal
@@ -131,8 +136,9 @@ export default function App() {
           languageName={selectedLanguageName}
           familyNames={familyNames}
           initialMode={addModalMode}
+          initialWordText={addModalInitialWordText}
           onClose={() => setShowAddModal(false)}
-          onAddWord={handleAddWord}
+          onAddWord={addWord}
           onAddFamily={handleAddFamily}
           onAddLanguage={handleAddLanguage}
         />

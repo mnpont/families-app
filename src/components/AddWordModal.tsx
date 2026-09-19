@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { lookupTranslation } from '../lib/lookupApi';
 import { SearchIcon } from './icons/SearchIcon';
 import { WORD_TYPES, type LanguageId, type WordType } from '../types/models';
@@ -8,31 +8,36 @@ interface AddWordModalProps {
   languageName: string;
   familyNames: string[];
   initialMode?: AddModalMode;
+  initialWordText?: string;
   onClose: () => void;
   onAddWord: (
     text: string,
     translationText: string,
     familyName: string,
     partOfSpeech: WordType | null,
-  ) => void;
+  ) => Promise<boolean>;
   onAddFamily: (name: string) => void;
   onAddLanguage: (id: string, name: string) => void;
 }
 
 type AddModalMode = 'word' | 'family' | 'language';
 
+/** How long the post-add confirmation toast stays up before fading, in ms -- kept in sync with the CSS animation's own duration. */
+const ADDED_TOAST_MS = 2200;
+
 export function AddWordModal({
   languageId,
   languageName,
   familyNames,
   initialMode = 'word',
+  initialWordText = '',
   onClose,
   onAddWord,
   onAddFamily,
   onAddLanguage,
 }: AddWordModalProps) {
   const [mode, setMode] = useState<AddModalMode>(initialMode);
-  const [wordText, setWordText] = useState('');
+  const [wordText, setWordText] = useState(initialWordText);
   const [translationText, setTranslationText] = useState('');
   const [wordType, setWordType] = useState<WordType | ''>('');
   const [newFamilyName, setNewFamilyName] = useState('');
@@ -42,13 +47,30 @@ export function AddWordModal({
   const [newFamilyChipText, setNewFamilyChipText] = useState('');
   const [newLanguageName, setNewLanguageName] = useState('');
   const [newLanguageCode, setNewLanguageCode] = useState('');
+  const [isSubmittingWord, setIsSubmittingWord] = useState(false);
+  const [addedToast, setAddedToast] = useState<{ text: string; key: number } | null>(null);
+  const wordInputRef = useRef<HTMLInputElement>(null);
 
-  const submitWord = () => {
-    if (!selectedFamily) return;
-    onAddWord(wordText, translationText, selectedFamily, wordType || null);
-    setWordText('');
-    setTranslationText('');
-    setWordType('');
+  useEffect(() => {
+    if (!addedToast) return;
+    const timer = setTimeout(() => setAddedToast(null), ADDED_TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [addedToast]);
+
+  const submitWord = async () => {
+    if (!selectedFamily || isSubmittingWord) return;
+    setIsSubmittingWord(true);
+    const success = await onAddWord(wordText, translationText, selectedFamily, wordType || null);
+    setIsSubmittingWord(false);
+    // Only clear on confirmed success -- clearing eagerly would lose the
+    // user's input if the save actually failed (see useVocabulary.addWord).
+    if (success) {
+      setAddedToast({ text: wordText, key: Date.now() });
+      setWordText('');
+      setTranslationText('');
+      setWordType('');
+      wordInputRef.current?.focus();
+    }
   };
 
   const submitFamily = () => {
@@ -129,12 +151,18 @@ export function AddWordModal({
           </button>
         </div>
         <div className="modal-fields">
+          {mode === 'word' && addedToast && (
+            <div className="word-added-toast" key={addedToast.key}>
+              &#10003; Added &ldquo;{addedToast.text}&rdquo;
+            </div>
+          )}
           {mode !== 'language' && (
             <div className="input-group">
               <label className="input-label">
                 {mode === 'word' ? `New ${languageName} word` : 'Family Name'}
               </label>
               <input
+                ref={wordInputRef}
                 type="text"
                 className="input-field"
                 value={mode === 'word' ? wordText : newFamilyName}
@@ -261,8 +289,12 @@ export function AddWordModal({
           <button className="button button-secondary" onClick={onClose}>
             Cancel
           </button>
-          <button className="button button-primary" onClick={submit}>
-            {submitLabel}
+          <button
+            className="button button-primary"
+            onClick={submit}
+            disabled={mode === 'word' && isSubmittingWord}
+          >
+            {mode === 'word' && isSubmittingWord ? 'Adding…' : submitLabel}
           </button>
         </div>
       </div>

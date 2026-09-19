@@ -332,6 +332,163 @@ body::after {
   color: #bbb;
 }
 
+/* Grid-row collapse (0fr -> 1fr), same technique as .language-bar's
+   grid-column collapse -- scales to the bar's real height, no guessed
+   max-height. margin-bottom only appears once open, so the bar takes no
+   space at rest (state 1 looks identical to today). */
+.word-search-bar-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.35s ease,
+    opacity 0.3s ease,
+    margin-bottom 0.35s ease;
+}
+
+.word-search-bar-wrap--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-bottom: 10px;
+}
+
+.word-search-bar-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.word-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 0 12px;
+}
+
+.word-search-bar svg {
+  width: 14px;
+  height: 14px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.word-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1a1a1a;
+  caret-color: #ff9a9e;
+}
+
+.word-search-input::placeholder {
+  color: #999;
+}
+
+.word-search-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.word-search-results {
+  padding-top: 10px;
+}
+
+.word-search-result {
+  cursor: pointer;
+  transition:
+    padding 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.word-search-result:hover {
+  border-color: rgba(255, 154, 158, 0.2);
+}
+
+.word-search-family {
+  font-size: 11.5px;
+  color: #999;
+  margin-top: 5px;
+}
+
+.word-search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 34px 10px 0;
+}
+
+.word-search-empty-text {
+  font-size: 13.5px;
+  color: #999;
+  text-align: center;
+}
+
+.word-search-add-button {
+  padding: 11px 18px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.3);
+  transition: all 0.2s ease;
+}
+
+.word-search-add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(255, 154, 158, 0.4);
+}
+
+.word-search-back {
+  border: none;
+  background: none;
+  padding: 6px 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.word-search-back:hover {
+  color: #666;
+}
+
+.word-search-empty .word-search-back {
+  margin-top: 10px;
+}
+
+.word-search-back-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 22px;
+}
+
+@media (min-width: 700px) {
+  .word-search-bar-wrap,
+  .word-search-results {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 @media (min-width: 700px) {
   .family-list {
     max-width: 640px;
@@ -405,6 +562,40 @@ body::after {
   font-weight: 600;
   margin-bottom: 24px;
   color: #1a1a1a;
+}
+
+/* Confirms a word was saved without closing the modal -- see AddWordModal's
+   submitWord. Timed to fade out at the same ADDED_TOAST_MS the component
+   uses to actually remove it from the DOM. */
+.word-added-toast {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  font-size: 13.5px;
+  font-weight: 600;
+  animation: word-added-toast-fade 2.2s ease forwards;
+}
+
+@keyframes word-added-toast-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .input-group {
@@ -493,12 +684,17 @@ body::after {
   font-family: 'Inter', sans-serif;
 }
 
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .button-primary {
   background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
   color: white;
 }
 
-.button-primary:hover {
+.button-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(255, 154, 158, 0.4);
 }
@@ -735,28 +931,19 @@ body::after {
   font-weight: 600;
   text-align: center;
   color: #1a1a1a;
-  word-wrap: break-word;
   max-width: 100%;
   line-height: 1.3;
+  /* Font size is set inline by useFitText, which shrinks it until the text
+     fits without breaking a word mid-way -- see Flashcard.tsx. */
+  overflow-wrap: normal;
+}
+
+/* Last-resort fallback: a single word that still doesn't fit at the
+   smallest font size (useFitText's `overflowing` flag) gets a mid-word
+   break rather than spilling outside the card. */
+.flashcard-text--overflowing {
   overflow-wrap: break-word;
   hyphens: auto;
-}
-
-/* Responsive font sizing based on text length */
-.flashcard-text.size-small {
-  font-size: 42px;
-}
-
-.flashcard-text.size-medium {
-  font-size: 32px;
-}
-
-.flashcard-text.size-large {
-  font-size: 24px;
-}
-
-.flashcard-text.size-xlarge {
-  font-size: 20px;
 }
 
 .nav-bar {
@@ -1165,6 +1352,11 @@ body::after {
   margin-bottom: 2px;
 }
 
+.word-text strong {
+  color: #e8677d;
+  font-weight: 700;
+}
+
 .word-gender-chip {
   font:
     700 10px/1 'Inter',
@@ -1351,25 +1543,15 @@ body::after {
   font-weight: 700;
   text-align: center;
   color: #1a1a1a;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
   margin: 14px 0 18px;
+  /* Font size is set inline by useFitText -- see MultipleChoiceCard.tsx. */
+  overflow-wrap: normal;
 }
 
-.practice-prompt.size-small {
-  font-size: 40px;
-}
-
-.practice-prompt.size-medium {
-  font-size: 30px;
-}
-
-.practice-prompt.size-large {
-  font-size: 22px;
-}
-
-.practice-prompt.size-xlarge {
-  font-size: 18px;
+/* Last-resort fallback -- see .flashcard-text--overflowing above. */
+.practice-prompt--overflowing {
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .mc-options {

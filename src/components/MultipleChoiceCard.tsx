@@ -1,4 +1,5 @@
-import { getFontSizeClass } from '../utils/fontSize';
+import { useRef } from 'react';
+import { useFitText } from '../hooks/useFitText';
 import { CheckIcon } from './icons/CheckIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 
@@ -18,10 +19,21 @@ export function MultipleChoiceCard({
   onSelect,
 }: MultipleChoiceCardProps) {
   const answered = selected !== null;
+  const promptRef = useRef<HTMLDivElement>(null);
+  const { fontSize, overflowing } = useFitText(promptRef, prompt, {
+    maxFontSize: 40,
+    minFontSize: 18,
+  });
 
   return (
     <>
-      <div className={`practice-prompt ${getFontSizeClass(prompt)}`}>{prompt}</div>
+      <div
+        ref={promptRef}
+        className={`practice-prompt ${overflowing ? 'practice-prompt--overflowing' : ''}`}
+        style={{ fontSize }}
+      >
+        {prompt}
+      </div>
       <div className="mc-options">
         {options.map((option) => {
           const isCorrect = option === correctAnswer;
