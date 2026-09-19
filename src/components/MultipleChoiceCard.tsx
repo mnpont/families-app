@@ -27,12 +27,17 @@ export function MultipleChoiceCard({
 
   return (
     <>
-      <div
-        ref={promptRef}
-        className={`practice-prompt ${overflowing ? 'practice-prompt--overflowing' : ''}`}
-        style={{ fontSize }}
-      >
-        {prompt}
+      {/* Fixed-height slot: the options below sit at the same y for a one-word
+          prompt and a two-line one, so moving to the next question never
+          shifts them. */}
+      <div className="practice-prompt-slot">
+        <div
+          ref={promptRef}
+          className={`practice-prompt ${overflowing ? 'practice-prompt--overflowing' : ''}`}
+          style={{ fontSize }}
+        >
+          {prompt}
+        </div>
       </div>
       <div className="mc-options">
         {options.map((option) => {

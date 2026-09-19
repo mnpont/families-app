@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as vocabularyApi from '../lib/vocabularyApi';
 import { schedule } from '../utils/scheduler';
 import { shuffleArray } from '../utils/shuffleArray';
@@ -12,20 +12,36 @@ import type { ReviewCard } from '../types/reviewCard';
  * immediately -- reopening the review tab re-fetches, so a card marked
  * "again" comes back due on the next fetch rather than looping within the
  * same sitting.
+ *
+ * The removal is optimistic: the card leaves the queue before the write is
+ * sent, so a view can advance to the next word in the same frame as the tap
+ * instead of waiting out a network round-trip (see PracticeView). A failed
+ * write puts the card back at the end of the queue so the grade isn't
+ * silently lost.
  */
 export function useReviewSession(languageId: LanguageId | null) {
   const [cards, setCards] = useState<ReviewCard[]>([]);
   const [loading, setLoading] = useState(!!languageId);
-  const [submitting, setSubmitting] = useState(false);
+  const [inFlight, setInFlight] = useState(0);
+  // Ids whose grade is already sent or saved. Guards against a double-tap
+  // grading the same card twice in a single frame, where `cards` in the
+  // handler's closure hasn't re-rendered yet.
+  const gradedIdsRef = useRef<Set<number>>(new Set());
 
   // Reset during render rather than in an effect, so a language switch clears
   // the stale queue in the same pass instead of flashing it for a frame.
+  // (gradedIdsRef is a ref, not state -- mutating it must stay in an effect,
+  // below, since refs can't be written during render.)
   const [syncedLanguageId, setSyncedLanguageId] = useState(languageId);
   if (languageId !== syncedLanguageId) {
     setSyncedLanguageId(languageId);
     setCards([]);
     setLoading(!!languageId);
   }
+
+  useEffect(() => {
+    gradedIdsRef.current = new Set();
+  }, [languageId]);
 
   useEffect(() => {
     if (!languageId) return;
@@ -54,20 +70,25 @@ export function useReviewSession(languageId: LanguageId | null) {
 
   const submitGrade = async (wordId: number, grade: Grade) => {
     const card = cards.find((c) => c.id === wordId);
-    if (!card || submitting) return;
+    if (!card || gradedIdsRef.current.has(wordId)) return;
 
-    setSubmitting(true);
+    gradedIdsRef.current.add(wordId);
+    setCards((current) => current.filter((c) => c.id !== wordId));
+    setInFlight((n) => n + 1);
     try {
       const next = schedule(card.schedule, grade);
       await vocabularyApi.submitReview(wordId, grade, next);
-      setCards((current) => current.filter((c) => c.id !== wordId));
     } catch (error) {
       console.error('Error submitting review:', error);
+      // Put it back at the end of the queue rather than dropping it, so the
+      // word still gets reviewed this sitting.
+      gradedIdsRef.current.delete(wordId);
+      setCards((current) => (current.some((c) => c.id === wordId) ? current : [...current, card]));
       alert('Failed to save your review. Please try again.');
     } finally {
-      setSubmitting(false);
+      setInFlight((n) => n - 1);
     }
   };
 
-  return { cards, loading, submitting, submitGrade };
+  return { cards, loading, submitting: inFlight > 0, submitGrade };
 }

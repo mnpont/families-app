@@ -1511,39 +1511,36 @@ body::after {
   white-space: nowrap;
 }
 
+/*
+ * No enter/exit transition on purpose. Each question is a keyed subtree
+ * (PracticeView.tsx) that mounts complete and in place: prompt, options and
+ * grading row appear together, in one paint. The previous slide-out /
+ * hide-for-the-network-wait / slide-in sequence is what made grading read as
+ * the card jumping around and loading in stages, and an opacity crossfade
+ * isn't an option either -- opacity applies to the whole subtree, which is
+ * what made the solid .mc-option cards look transparent mid-animation.
+ */
 .practice-question {
   width: 100%;
   max-width: 420px;
-  transform: translateY(0);
-  /* No visibility transition here on purpose: removing --transitioning
-       (entering a new question) must reveal it instantly, then slide it
-       down from -14px -- not wait through a delay first. */
-  transition: transform 0.18s ease;
 }
 
-/* Slide only -- deliberately never touches opacity, so the solid .mc-option
-   cards stay 100% opaque at every frame of the transition. An opacity fade
-   here would make them look transparent while animating, since opacity
-   applies to the whole subtree, not just this wrapper.
-
-   visibility is delayed until the slide itself finishes (0.18s), then flips
-   to hidden -- so the exit motion is seen, but however long grading's
-   network round-trip takes after that is invisible, not a card frozen
-   mid-air. A card that can't be seen can't look "stuck." */
-.practice-question.practice-question--transitioning {
-  transform: translateY(-14px);
-  visibility: hidden;
-  transition:
-    transform 0.18s ease,
-    visibility 0s linear 0.18s;
+/* Two lines at .practice-prompt's 40px maximum, so prompt length never moves
+   the options. */
+.practice-prompt-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 106px;
+  margin-bottom: 18px;
 }
 
 .practice-prompt {
+  width: 100%;
   font-family: 'Playfair Display', serif;
   font-weight: 700;
   text-align: center;
   color: #1a1a1a;
-  margin: 14px 0 18px;
   /* Font size is set inline by useFitText -- see MultipleChoiceCard.tsx. */
   overflow-wrap: normal;
 }
