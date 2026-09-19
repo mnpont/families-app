@@ -19,10 +19,12 @@ export function Flashcard({ word, className, isFlipped, onClick }: FlashcardProp
   const front = useFitText(frontRef, word?.text, {
     maxFontSize: MAX_FONT_SIZE,
     minFontSize: MIN_FONT_SIZE,
+    checkHeight: true,
   });
   const back = useFitText(backRef, word?.translation?.text, {
     maxFontSize: MAX_FONT_SIZE,
     minFontSize: MIN_FONT_SIZE,
+    checkHeight: true,
   });
 
   return (
