@@ -19,6 +19,17 @@ interface FamiliesViewProps {
 const PULL_OPEN_THRESHOLD = 40;
 /** Upward drag past this many px (bar open, query empty) dismisses the search bar. */
 const PULL_CLOSE_THRESHOLD = 30;
+/**
+ * Desktop equivalent of the touch pull gesture: scrolling up further while
+ * already at the top of the list (nothing left to scroll into) opens the
+ * bar, same as a downward touch drag. Trackpads report a wheel event per
+ * few pixels, so deltas accumulate; a plain mouse wheel notch alone clears
+ * either threshold in one event.
+ */
+const WHEEL_OPEN_THRESHOLD = 60;
+const WHEEL_CLOSE_THRESHOLD = 60;
+/** Gap after which a stalled wheel gesture no longer counts toward the next one. */
+const WHEEL_ACCUMULATOR_RESET_MS = 200;
 
 export function FamiliesView({
   languageId,
@@ -54,9 +65,11 @@ export function FamiliesView({
     if (searchOpen) inputRef.current?.focus();
   }, [searchOpen]);
 
-  // Native (non-React) touch listeners, so touchmove can call preventDefault --
-  // React attaches touch handlers as passive by default, which would silently
-  // ignore it and let the page rubber-band instead of driving the reveal.
+  // Native (non-React) touch/wheel listeners, so the handlers can call
+  // preventDefault -- React attaches touch/wheel handlers as passive by
+  // default, which would silently ignore it and let the page rubber-band
+  // instead of driving the reveal. touchmove covers mobile drags, wheel
+  // covers desktop trackpad/mouse scrolling.
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
@@ -113,11 +126,54 @@ export function FamiliesView({
     el.addEventListener('touchend', onTouchEnd, { passive: true });
     el.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
+    let wheelAccum = 0;
+    let lastWheelTime = 0;
+
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollTop > 0) {
+        wheelAccum = 0;
+        return;
+      }
+
+      const now = performance.now();
+      if (now - lastWheelTime > WHEEL_ACCUMULATOR_RESET_MS) wheelAccum = 0;
+      lastWheelTime = now;
+
+      if (!searchOpenRef.current) {
+        if (e.deltaY >= 0) {
+          wheelAccum = 0;
+          return;
+        }
+        // Nothing above the list to scroll into anyway -- safe to swallow
+        // while we decide whether this is a reveal gesture.
+        e.preventDefault();
+        wheelAccum += -e.deltaY;
+        if (wheelAccum > WHEEL_OPEN_THRESHOLD) {
+          setSearchOpen(true);
+          wheelAccum = 0;
+        }
+      } else if (!trimmedQueryRef.current) {
+        if (e.deltaY <= 0) {
+          wheelAccum = 0;
+          return;
+        }
+        wheelAccum += e.deltaY;
+        if (wheelAccum > WHEEL_CLOSE_THRESHOLD) {
+          close();
+          inputRef.current?.blur();
+          wheelAccum = 0;
+        }
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+
     return () => {
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
       el.removeEventListener('touchcancel', onTouchEnd);
+      el.removeEventListener('wheel', onWheel);
     };
   }, [close, setSearchOpen]);
 
