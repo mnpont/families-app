@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { lookupTranslation } from '../lib/lookupApi';
 import { SearchIcon } from './icons/SearchIcon';
 import { WORD_TYPES, type LanguageId, type WordType } from '../types/models';
@@ -21,6 +21,9 @@ interface AddWordModalProps {
 }
 
 type AddModalMode = 'word' | 'family' | 'language';
+
+/** How long the post-add confirmation toast stays up before fading, in ms -- kept in sync with the CSS animation's own duration. */
+const ADDED_TOAST_MS = 2200;
 
 export function AddWordModal({
   languageId,
@@ -45,7 +48,14 @@ export function AddWordModal({
   const [newLanguageName, setNewLanguageName] = useState('');
   const [newLanguageCode, setNewLanguageCode] = useState('');
   const [isSubmittingWord, setIsSubmittingWord] = useState(false);
+  const [addedToast, setAddedToast] = useState<{ text: string; key: number } | null>(null);
   const wordInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!addedToast) return;
+    const timer = setTimeout(() => setAddedToast(null), ADDED_TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [addedToast]);
 
   const submitWord = async () => {
     if (!selectedFamily || isSubmittingWord) return;
@@ -55,6 +65,7 @@ export function AddWordModal({
     // Only clear on confirmed success -- clearing eagerly would lose the
     // user's input if the save actually failed (see useVocabulary.addWord).
     if (success) {
+      setAddedToast({ text: wordText, key: Date.now() });
       setWordText('');
       setTranslationText('');
       setWordType('');
@@ -140,6 +151,11 @@ export function AddWordModal({
           </button>
         </div>
         <div className="modal-fields">
+          {mode === 'word' && addedToast && (
+            <div className="word-added-toast" key={addedToast.key}>
+              &#10003; Added &ldquo;{addedToast.text}&rdquo;
+            </div>
+          )}
           {mode !== 'language' && (
             <div className="input-group">
               <label className="input-label">
