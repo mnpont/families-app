@@ -14,7 +14,7 @@ The Practice hub is built one feature at a time. Each feature follows the same l
 
 The Code prompts cover behavior, data and logic only. For visuals, layout and copy, the Claude Design handoff is the source of truth.
 
-> **Update after the first handoff:** Claude Design produced one handoff covering all three features: Fill the Gap is screens 8a/8b and Build the Sentence is screens 9a/9b, at lower fidelity. Reattach that same handoff for 2B and 3B. Prompts 2A and 3A are now optional (only needed for a redesign). The Code prompts below are the current versions; the latest copies are in the chat where they were written.
+> **Update after the first handoff:** Claude Design produced one handoff covering all three features: Fill the Gap is screens 8a/8b and Build the Sentence is screens 9a/9b, at lower fidelity. Reattach that same handoff for 2B and 3B. Prompts 2A and 3A are now optional (only needed for a redesign). The Code prompts 1B/2B/3B below were written before the handoff existed. The updated versions that match it were given in the chat, so use those.
 
 ---
 
