@@ -113,6 +113,16 @@ describe('diffSegments', () => {
     ]);
   });
 
+  it('diffs a misspelled word by letter even when a word is missing', () => {
+    expect(diffSegments('vous êtes levé', 'xyz lev')).toEqual([
+      { text: 'vous', mark: true },
+      { text: ' ', mark: false },
+      { text: 'êtes', mark: true },
+      { text: ' lev', mark: false },
+      { text: 'é', mark: true },
+    ]);
+  });
+
   it('highlights a replaced word whole', () => {
     expect(diffSegments('vont', 'allent')).toEqual([{ text: 'vont', mark: true }]);
   });

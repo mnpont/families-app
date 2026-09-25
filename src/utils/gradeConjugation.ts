@@ -116,8 +116,8 @@ export function markMissedAccents(expected: string, typed: string): Segment[] {
   return mergeSegments(segments);
 }
 
-/** Indices into `a` of a longest common subsequence of a and b. */
-function lcsIndices<T>(a: T[], b: T[]): Set<number> {
+/** Longest common subsequence of a and b, as index pairs [indexInA, indexInB]. */
+function lcsPairs<T>(a: T[], b: T[]): [number, number][] {
   const table = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
   for (let i = a.length - 1; i >= 0; i--) {
     for (let j = b.length - 1; j >= 0; j--) {
@@ -125,12 +125,12 @@ function lcsIndices<T>(a: T[], b: T[]): Set<number> {
         a[i] === b[j] ? table[i + 1][j + 1] + 1 : Math.max(table[i + 1][j], table[i][j + 1]);
     }
   }
-  const kept = new Set<number>();
+  const pairs: [number, number][] = [];
   let i = 0;
   let j = 0;
   while (i < a.length && j < b.length) {
     if (a[i] === b[j]) {
-      kept.add(i);
+      pairs.push([i, j]);
       i++;
       j++;
     } else if (table[i + 1][j] >= table[i][j + 1]) {
@@ -139,7 +139,7 @@ function lcsIndices<T>(a: T[], b: T[]): Set<number> {
       j++;
     }
   }
-  return kept;
+  return pairs;
 }
 
 /**
@@ -149,39 +149,59 @@ function lcsIndices<T>(a: T[], b: T[]): Set<number> {
  */
 const CHAR_DIFF_THRESHOLD = 0.5;
 
-function diffWord(expected: string, typed: string): Segment[] {
-  const expectedChars = [...expected];
-  const kept = lcsIndices(expectedChars, [...typed]);
-  if (kept.size / expectedChars.length <= CHAR_DIFF_THRESHOLD)
+function sharedLetterRatio(expected: string, typed: string): number {
+  return lcsPairs([...expected], [...typed]).length / [...expected].length;
+}
+
+function diffWord(expected: string, typed: string | undefined): Segment[] {
+  if (typed === undefined || sharedLetterRatio(expected, typed) <= CHAR_DIFF_THRESHOLD) {
     return [{ text: expected, mark: true }];
+  }
+  const expectedChars = [...expected];
+  const kept = new Set(lcsPairs(expectedChars, [...typed]).map(([i]) => i));
   return mergeSegments(expectedChars.map((char, i) => ({ text: char, mark: !kept.has(i) })));
 }
 
 /**
  * For a "wrong": highlights what differs between `expected` and `typed`.
- * Word-level first; a word in the same slot that's only misspelled
- * ("allé" for "allés") gets character-level highlighting instead of
- * lighting up entirely.
+ * Words are aligned first (identical words by longest common subsequence,
+ * then each leftover expected word with the closest leftover typed word);
+ * a word that's only misspelled ("allé" for "allés") gets character-level
+ * highlighting instead of lighting up entirely, and a missing or replaced
+ * word is highlighted whole.
  */
 export function diffSegments(expected: string, typed: string): Segment[] {
   const expectedWords = expected.split(' ');
   const typedWords = typed.split(' ');
-  const segments: Segment[] = [];
 
-  if (expectedWords.length === typedWords.length) {
-    expectedWords.forEach((word, i) => {
-      if (i > 0) segments.push({ text: ' ', mark: false });
-      segments.push(
-        ...(word === typedWords[i] ? [{ text: word, mark: false }] : diffWord(word, typedWords[i])),
-      );
+  const partner = new Map<number, number>(lcsPairs(expectedWords, typedWords));
+  const usedTyped = new Set(partner.values());
+  expectedWords.forEach((word, i) => {
+    if (partner.has(i)) return;
+    let best: number | undefined;
+    let bestRatio = CHAR_DIFF_THRESHOLD;
+    typedWords.forEach((candidate, j) => {
+      if (usedTyped.has(j)) return;
+      const ratio = sharedLetterRatio(word, candidate);
+      if (ratio > bestRatio) {
+        bestRatio = ratio;
+        best = j;
+      }
     });
-  } else {
-    const kept = lcsIndices(expectedWords, typedWords);
-    expectedWords.forEach((word, i) => {
-      if (i > 0) segments.push({ text: ' ', mark: false });
-      segments.push({ text: word, mark: !kept.has(i) });
-    });
-  }
+    if (best !== undefined) {
+      partner.set(i, best);
+      usedTyped.add(best);
+    }
+  });
+
+  const segments: Segment[] = [];
+  expectedWords.forEach((word, i) => {
+    if (i > 0) segments.push({ text: ' ', mark: false });
+    const typedWord = partner.has(i) ? typedWords[partner.get(i)!] : undefined;
+    segments.push(
+      ...(typedWord === word ? [{ text: word, mark: false }] : diffWord(word, typedWord)),
+    );
+  });
   return mergeSegments(segments);
 }
 
