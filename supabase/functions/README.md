@@ -3,7 +3,8 @@
 Example-sentence and multiple-choice-distractor generation, running
 server-side so the LLM API key never ships in the browser bundle (see the
 multi-language UI in `src/`, which has no real user auth to gate a
-client-side key behind).
+client-side key behind), plus verb conjugation tables for the Practice
+hub's Conjugation Drill.
 
 ## Functions
 
@@ -47,6 +48,27 @@ client-side key behind).
   read/write logic all three distractor functions share, including the
   "avoid repeating these" prompt clause `refresh-distractors` uses.
 
+- **`generate-conjugations`** — detects whether a single Word is a French
+  verb and, if so, stores its full conjugation table in `words.conjugations`
+  (migration `016`) and tags it `part_of_speech = 'verb'` if it had no type.
+  Called fire-and-forget by `createWord()` and `updateWord()`, same
+  best-effort contract as the two above. No LLM: forms come from the
+  rule-based `french-verbs` library over the Lefff dictionary. A no-op for
+  languages outside `CONJUGATION_LANGUAGES` (`['fr']`) and for words typed
+  as anything but a verb.
+- **`batch-generate-conjugations`** — the conjugation equivalent of the batch
+  functions above: sweeps words with no conjugations yet, `{ languageId,
+  limit, force }` (default limit 500; `force: true` regenerates words that
+  already have them, e.g. after a shape version bump). Not wired to run
+  automatically.
+- **`_shared/generateConjugations.ts`** — loads the library (pinned
+  `npm:` versions) and does the Supabase read/write for both.
+- **`_shared/conjugationCore.ts`** — the pure rules (verb detection,
+  auxiliary choice, agreement variants, reflexive elision, Lefff data
+  fixes). Imports nothing, so the Node backfill
+  (`scripts/backfillConjugations.ts`) and the Vitest suite (`tests/`) run
+  the exact same code. See `docs/practice-hub-spec.md`.
+
 ## Why these exist (history)
 
 The app used to have two Edge Functions with the same names that queried
@@ -63,11 +85,12 @@ pair in `languages`, not just German/Spanish.
 
 ## Environment
 
-All five functions need `OPENAI_API_KEY` set as a Supabase Edge Function
+The five sentence/distractor functions need `OPENAI_API_KEY` set as a Supabase Edge Function
 secret (Project Settings → Edge Functions → Secrets, or `supabase secrets
 set OPENAI_API_KEY=...`) — one secret, shared by sentence and distractor
 generation alike. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are
 provided automatically by the Supabase runtime — no need to set those.
+The two conjugation functions need no secret of their own.
 
 ## Deploying
 
@@ -77,6 +100,8 @@ supabase functions deploy batch-generate-sentences
 supabase functions deploy generate-distractors
 supabase functions deploy batch-generate-distractors
 supabase functions deploy refresh-distractors
+supabase functions deploy generate-conjugations
+supabase functions deploy batch-generate-conjugations
 ```
 
 (Deploys both `_shared/` and the calling function, since Supabase bundles
