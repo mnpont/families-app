@@ -3,6 +3,7 @@ import { OWNER_ID } from '../constants/owner';
 import { detectTranslationLanguage } from '../utils/detectTranslationLanguage';
 import { defaultScheduleState, type ScheduleResult } from '../utils/scheduler';
 import { resolveGender } from './genderApi';
+import type { Conjugations } from '../types/conjugations';
 import type { Grade, Language, LanguageId } from '../types/models';
 import type { VocabWord } from '../types/vocabWord';
 import type { ReviewCard } from '../types/reviewCard';
@@ -22,6 +23,7 @@ interface WordRow {
   part_of_speech: string | null;
   gender: string | null;
   llm_distractors: string[] | null;
+  conjugations: Conjugations | null;
   created_at: string;
   translations: { id: number; text: string; language_id: string; is_primary: boolean }[];
   example_sentences: { id: number; text: string; translation_text: string | null }[];
@@ -57,6 +59,7 @@ function toVocabWord(word: WordRow, deckName: string): VocabWord {
       ? { text: example.text, translationText: example.translation_text }
       : null,
     llmDistractors: word.llm_distractors,
+    conjugations: word.conjugations,
     deckName,
     createdAt: word.created_at,
   };
@@ -83,7 +86,7 @@ export async function fetchVocabulary(languageId: LanguageId): Promise<Vocabular
       supabase
         .from('words')
         .select(
-          'id, language_id, text, part_of_speech, gender, llm_distractors, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text)',
+          'id, language_id, text, part_of_speech, gender, llm_distractors, conjugations, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text)',
         )
         .eq('language_id', languageId)
         .order('created_at', { ascending: true }),
@@ -162,6 +165,22 @@ function generateEnrichmentInBackground(wordId: number): void {
   supabase.functions.invoke('generate-distractors', { body: { wordId } }).catch((error) => {
     console.error(`Error generating distractors for word ${wordId}:`, error);
   });
+  generateConjugationsInBackground(wordId);
+}
+
+/**
+ * Fire-and-forget verb detection + conjugation table (words.conjugations,
+ * migration 016), after both add AND edit -- an edit can turn a word into a
+ * verb, or its text into something else. The Edge Function decides
+ * everything server-side (language, word type, dictionary lookup) and is a
+ * no-op for non-French words, so this is called unconditionally rather than
+ * duplicating those rules here. A gap left here is swept up by
+ * batch-generate-conjugations or scripts/backfillConjugations.ts.
+ */
+function generateConjugationsInBackground(wordId: number): void {
+  supabase.functions.invoke('generate-conjugations', { body: { wordId } }).catch((error) => {
+    console.error(`Error generating conjugations for word ${wordId}:`, error);
+  });
 }
 
 export async function createWord(
@@ -239,6 +258,7 @@ export async function createWord(
     translation: { text: translationText },
     exampleSentence: null,
     llmDistractors: null,
+    conjugations: null,
     deckName,
     createdAt: word.created_at,
   };
@@ -293,6 +313,8 @@ export async function updateWord(
     .eq('word_id', wordId)
     .eq('is_primary', true);
   if (translationError) throw translationError;
+
+  generateConjugationsInBackground(wordId);
 }
 
 export async function moveWordToDeck(
@@ -358,7 +380,7 @@ interface ScheduleRow {
 }
 
 const REVIEW_CARD_SELECT =
-  'interval_days, ease_factor, review_count, due_at, words!inner(id, language_id, text, part_of_speech, gender, llm_distractors, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text))';
+  'interval_days, ease_factor, review_count, due_at, words!inner(id, language_id, text, part_of_speech, gender, llm_distractors, conjugations, created_at, translations(id, text, language_id, is_primary), example_sentences(id, text, translation_text))';
 
 function toReviewCard(row: ScheduleRow): ReviewCard {
   return {

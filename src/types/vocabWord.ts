@@ -1,3 +1,4 @@
+import type { Conjugations } from './conjugations';
 import type { Gender, LanguageId } from './models';
 
 /**
@@ -16,6 +17,8 @@ export interface VocabWord {
   exampleSentence: { text: string; translationText: string | null } | null;
   /** Up to 3 LLM-generated plausible-but-wrong translations for Practice-tab multiple choice, or null if not (yet) generated. */
   llmDistractors: string[] | null;
+  /** Full conjugation table for a detected verb (migration 016), or null. Read it through src/utils/conjugationForms.ts isConjugatable, not directly. */
+  conjugations: Conjugations | null;
   deckName: string;
   createdAt: string;
 }
