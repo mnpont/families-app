@@ -13,6 +13,8 @@ import { ExpandedFamilyModal } from './components/ExpandedFamilyModal';
 import { FamilySelectorModal } from './components/FamilySelectorModal';
 import { EditWordModal } from './components/EditWordModal';
 import { EditFamilyModal } from './components/EditFamilyModal';
+import { ConjugationModal } from './components/ConjugationModal';
+import { isConjugatable } from './utils/conjugationForms';
 
 export type View = 'families' | 'flashcards' | 'practice';
 
@@ -25,6 +27,11 @@ export default function App() {
   const [showFamilySelector, setShowFamilySelector] = useState<number | null>(null);
   const [editingWord, setEditingWord] = useState<VocabWord | null>(null);
   const [editingFamilyName, setEditingFamilyName] = useState<string | null>(null);
+  const [conjugatingWord, setConjugatingWord] = useState<VocabWord | null>(null);
+  // Bumped when the Practice button is tapped while already on Practice:
+  // remounting PracticeView (it's part of its key, with the language) is
+  // what returns to the hub from inside an exercise.
+  const [practiceResetKey, setPracticeResetKey] = useState(0);
 
   const { languages, selectedLanguageId, setSelectedLanguageId, addLanguage } = useLanguages();
   const selectedLanguageName = languages.find((l) => l.id === selectedLanguageId)?.name ?? '';
@@ -42,6 +49,11 @@ export default function App() {
     saveFamilyName,
     deleteFamily,
   } = useVocabulary(selectedLanguageId);
+
+  const handleViewChange = (next: View) => {
+    if (next === 'practice' && view === 'practice') setPracticeResetKey((k) => k + 1);
+    setView(next);
+  };
 
   const handleOpenAddWord = () => {
     setAddModalMode('word');
@@ -126,7 +138,13 @@ export default function App() {
         <div className="content">
           {view === 'flashcards' && <FlashcardsView languageId={selectedLanguageId} />}
 
-          {view === 'practice' && <PracticeView languageId={selectedLanguageId} />}
+          {view === 'practice' && (
+            <PracticeView
+              key={`${selectedLanguageId}:${practiceResetKey}`}
+              languageId={selectedLanguageId}
+              onGoToFamilies={() => setView('families')}
+            />
+          )}
         </div>
       )}
 
@@ -157,7 +175,12 @@ export default function App() {
           onOpenFamilySelector={setShowFamilySelector}
           onEditWord={setEditingWord}
           onDeleteWord={deleteWord}
+          onConjugate={setConjugatingWord}
         />
+      )}
+
+      {conjugatingWord && isConjugatable(conjugatingWord) && (
+        <ConjugationModal word={conjugatingWord} onClose={() => setConjugatingWord(null)} />
       )}
 
       {showFamilySelector !== null && expandedFamily && (
@@ -190,7 +213,7 @@ export default function App() {
         />
       )}
 
-      <NavBar view={view} onViewChange={setView} />
+      <NavBar view={view} onViewChange={handleViewChange} />
     </div>
   );
 }
