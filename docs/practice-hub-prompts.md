@@ -14,20 +14,9 @@ Each prompt stands on its own, so none of them depends on the conversation that 
 ````
 I'm designing a new feature for "Families", a personal mobile-first web app I use to learn French and German vocabulary. I need you to design the screens for a new "Practice hub" and its first new exercise, a verb Conjugation Drill, plus two more exercises that will come later. I've attached a hand sketch of the Practice menu layout I want: please follow that structure.
 
-## About the app (so the design fits in)
+## Before designing
 
-- Mobile-first PWA (used mostly on an iPhone, added to the home screen). Design at 390×844. It should also look fine on a desktop browser as a centered column (max content width ~420px).
-- Visual style you MUST match:
-  - White background with soft, blurred "golden hour" gradient orbs: a pink/peach orb (rgba(255,154,158) → rgba(250,208,196)) in the top-right, and a periwinkle/light-blue orb (rgba(142,158,255) → rgba(194,233,251)) in the bottom-left. Subtle, low opacity.
-  - Primary accent: coral pink #FF9A9E.
-  - Titles: "Playfair Display", bold (700), serif. The header title is the word "Families" in Playfair Display.
-  - Everything else: "Inter" (400/500/600/700).
-  - Cards and buttons: rounded (~13px radius), solid white or slightly frosted, thin soft borders; hover/focus borders tint toward the coral accent.
-  - Existing multiple-choice answer rows are full-width rounded cards, min 48px tall, 14.5px semibold Inter text, turning green with a check icon when correct and red with an X icon when wrong.
-  - Correct = green, wrong = red, and a new "almost right" state should be amber/yellow.
-- Layout shell (unchanged, reuse it on every screen):
-  - Header: small sync-status dot on the left, "Families" title centered. (Tapping the title reveals a language switcher: French / German. The language currently selected decides which language you practice.)
-  - Bottom nav bar with 3 round icon buttons: Families (people icon), Flashcards (cards icon), Practice (pencil icon). The Practice tab is active on all screens in this brief.
+The app lives in the repo mnpont/families-app. Read it before designing so everything matches the existing look and components: src/styles/index.css (colors, fonts, the background gradient orbs, card and button styles), src/components/PracticeView.tsx and MultipleChoiceCard.tsx (the current Practice screen, its progress bar and answer states), Header.tsx, NavBar.tsx and ExpandedFamilyModal.tsx. It's a mobile-first PWA used mostly on an iPhone: design at 390×844, and it should also work as a centered column on desktop. Keep the existing header and bottom nav on every screen. Correct = green and wrong = red, as in Multiple Choice; add a new amber "almost right" state.
 
 ## Screen 1 — Practice menu (the hub)
 
