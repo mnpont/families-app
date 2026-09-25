@@ -6,8 +6,12 @@
  * future shape change can be told apart from this one.
  */
 
-/** Every person any language's config can ask for (src/constants/conjugation.ts). */
-export type Person = 'je' | 'tu' | 'il' | 'elle' | 'nous' | 'vous' | 'ils' | 'elles';
+/**
+ * A person key: 'je' ... 'elles' for French. Deliberately a plain string --
+ * which persons exist is per-language data (src/constants/conjugation.ts),
+ * so German's ich/du/... plug in without touching this type.
+ */
+export type Person = string;
 
 /** One accepted form, or several accepted variants -- the first is canonical. */
 export type PersonForms = string | string[];
