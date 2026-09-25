@@ -61,29 +61,90 @@ function isFuzzyMatch(t: string, s: string): boolean {
   return maxEdits > 0 && editDistance(t, s) <= maxEdits;
 }
 
+// Reflexive pronouns (French, Spanish, Italian, German), normalized. When
+// the saved word is a reflexive verb ("se coucher", "s'habiller", "sich
+// freuen"), the sentence usually swaps in a different person's pronoun
+// ("Je me couche", "Je m'habille", "Ich freue mich"), so the pronoun can't
+// be matched by spelling -- only by being one of these and sitting next to
+// the matched verb.
+const REFLEXIVE_PRONOUNS = new Set([
+  'me',
+  'te',
+  'se',
+  'nous',
+  'vous',
+  'm',
+  't',
+  's',
+  'nos',
+  'os',
+  'mi',
+  'ti',
+  'si',
+  'ci',
+  'vi',
+  'mich',
+  'dich',
+  'sich',
+  'uns',
+  'euch',
+]);
+
+// Only whitespace or an elision apostrophe between two tokens counts as
+// adjacent ("me couche", "m'habille"), not punctuation like a comma.
+const ADJACENT_GAP_RE = /^(\s+|['’])$/;
+
 /**
  * Fallback when no exact phrase match exists: highlight each sentence token
  * that fuzzily matches one of the target's content words. Short tokens
  * (articles, reflexive pronouns like "se"/"sich") are ignored unless the
  * target has nothing longer, since they'd otherwise match unrelated words.
+ * If the target is a reflexive verb, the sentence's pronoun right before
+ * (or, failing that, right after) the matched verb is highlighted with it.
  */
 function fuzzyHighlight(sentence: string, targetWord: string): ReactNode[] | null {
   const targetTokens = [...targetWord.matchAll(TOKEN_RE)].map((m) => normalize(m[0]));
-  const longest = Math.max(0, ...targetTokens.map((t) => t.length));
-  const contentTokens = targetTokens.filter((t) => t.length >= Math.min(4, longest));
+  // A reflexive pronoun is never the word to match on ("sich" in "sich
+  // freuen" is as long as a content word), unless it's all there is.
+  const isReflexive =
+    targetTokens.length > 1 && targetTokens.some((t) => REFLEXIVE_PRONOUNS.has(t));
+  const candidates = isReflexive
+    ? targetTokens.filter((t) => !REFLEXIVE_PRONOUNS.has(t))
+    : targetTokens;
+  const longest = Math.max(0, ...candidates.map((t) => t.length));
+  const contentTokens = candidates.filter((t) => t.length >= Math.min(4, longest));
   if (contentTokens.length === 0) return null;
+
+  const tokens = [...sentence.matchAll(TOKEN_RE)].map((m) => ({
+    start: m.index,
+    end: m.index + m[0].length,
+    norm: normalize(m[0]),
+  }));
+  const isPronounAt = (i: number, a: number, b: number) =>
+    tokens[i] !== undefined &&
+    REFLEXIVE_PRONOUNS.has(tokens[i].norm) &&
+    ADJACENT_GAP_RE.test(sentence.slice(tokens[a].end, tokens[b].start));
+
+  const spans: { start: number; end: number }[] = [];
+  tokens.forEach((token, i) => {
+    if (!contentTokens.some((t) => isFuzzyMatch(t, token.norm))) return;
+    let { start, end } = token;
+    if (isReflexive) {
+      if (isPronounAt(i - 1, i - 1, i)) start = tokens[i - 1].start;
+      else if (isPronounAt(i + 1, i, i + 1)) end = tokens[i + 1].end;
+    }
+    spans.push({ start, end });
+  });
+  if (spans.length === 0) return null;
 
   const out: ReactNode[] = [];
   let last = 0;
-  for (const m of sentence.matchAll(TOKEN_RE)) {
-    const token = normalize(m[0]);
-    if (!contentTokens.some((t) => isFuzzyMatch(t, token))) continue;
-    const start = m.index;
+  for (const { start, end } of spans) {
+    if (start < last) continue;
     if (start > last) out.push(sentence.slice(last, start));
-    out.push(<strong key={start}>{m[0]}</strong>);
-    last = start + m[0].length;
+    out.push(<strong key={start}>{sentence.slice(start, end)}</strong>);
+    last = end;
   }
-  if (out.length === 0) return null;
   if (last < sentence.length) out.push(sentence.slice(last));
   return out;
 }
