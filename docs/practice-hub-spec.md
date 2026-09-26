@@ -161,7 +161,9 @@ Verified in Chromium with iPhone emulation. Test on a real device after deployin
 
 **Add or enable an exercise.** Edit `EXERCISES` in `src/constants/exercises.ts`: flip its `status` to `() => 'enabled'` (or a per-language function). Then handle its id in `PracticeView`'s `onSelect` and render its component for a new `PracticeMode`. The hub picks it up automatically, including a count pill if you add one in `PracticeHub.countFor`.
 
-**Enable a tense.** Set `offered: true` on its entry in `FRENCH_TENSES` (`src/constants/conjugation.ts`). It then shows as a chip in the setup sheet and a section in the Conjugate modal. It's already stored for every verb, so nothing needs regenerating. One caveat: the subjunctive prompt would read better with "que" before the pronoun, a small addition to `ConjugationPrompt` when that tense is enabled.
+**Enable a tense.** Set `offered: true` on its entry in `FRENCH_TENSES` (`src/constants/conjugation.ts`), and `defaultOn: true` if its chip should start on. It then shows as a chip in the setup sheet and a section in the Conjugate modal.
+
+French offers six tenses today, matching handoff screen 2b: Présent, Passé composé, Imparfait, Futur simple, Conditionnel and Plus-que-parfait. Présent and Passé composé start on; the other four start off. Subjonctif is defined but not offered. It's already stored for every verb, so nothing needs regenerating. One caveat: the subjunctive prompt would read better with "que" before the pronoun, a small addition to `ConjugationPrompt` when that tense is enabled.
 
 **Add German** (no UI changes):
 

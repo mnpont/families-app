@@ -16,8 +16,20 @@ const verb = (overrides: Partial<Conjugations>): Conjugations => ({
 });
 
 describe('French drill config', () => {
-  it('offers présent and passé composé only', () => {
-    expect(offeredTenses(fr).map((t) => t.key)).toEqual(['present', 'passe_compose']);
+  it('offers the six setup-sheet tenses, with présent and passé composé on by default', () => {
+    expect(offeredTenses(fr).map((t) => t.key)).toEqual([
+      'present',
+      'passe_compose',
+      'imparfait',
+      'futur',
+      'conditionnel_present',
+      'plus_que_parfait',
+    ]);
+    expect(
+      offeredTenses(fr)
+        .filter((t) => t.defaultOn)
+        .map((t) => t.key),
+    ).toEqual(['present', 'passe_compose']);
   });
 
   it('has no config for German yet', () => {

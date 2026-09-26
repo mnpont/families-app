@@ -32,8 +32,10 @@ export function PracticeView({ languageId, onGoToFamilies }: PracticeViewProps) 
   const [mode, setMode] = useState<PracticeMode>('hub');
   const config = conjugationConfigFor(languageId);
   const tenses = config ? offeredTenses(config) : [];
-  // Per visit, never persisted: every offered tense starts on.
-  const [selectedTenses, setSelectedTenses] = useState(() => tenses.map((t) => t.key));
+  // Per visit, never persisted: the defaultOn tenses start on.
+  const [selectedTenses, setSelectedTenses] = useState(() =>
+    tenses.filter((t) => t.defaultOn).map((t) => t.key),
+  );
   const [sessionKey, setSessionKey] = useState(0);
 
   const { verbs, loading: verbsLoading } = useConjugationPool(languageId);

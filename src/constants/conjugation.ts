@@ -31,6 +31,8 @@ export interface TenseConfig {
   label: string;
   /** Offered in the setup sheet and the Conjugate modal. Enabling a tense is flipping this. */
   offered: boolean;
+  /** Among the offered tenses, whether its chip starts on in the setup sheet. */
+  defaultOn: boolean;
 }
 
 export interface PersonConfig {
@@ -85,13 +87,13 @@ const FRENCH_COMPOUND_TENSES = new Set([
 ]);
 
 const FRENCH_TENSES: TenseConfig[] = [
-  { key: 'present', label: 'Présent', offered: true },
-  { key: 'passe_compose', label: 'Passé composé', offered: true },
-  { key: 'imparfait', label: 'Imparfait', offered: false },
-  { key: 'futur', label: 'Futur simple', offered: false },
-  { key: 'conditionnel_present', label: 'Conditionnel', offered: false },
-  { key: 'subjonctif_present', label: 'Subjonctif', offered: false },
-  { key: 'plus_que_parfait', label: 'Plus-que-parfait', offered: false },
+  { key: 'present', label: 'Présent', offered: true, defaultOn: true },
+  { key: 'passe_compose', label: 'Passé composé', offered: true, defaultOn: true },
+  { key: 'imparfait', label: 'Imparfait', offered: true, defaultOn: false },
+  { key: 'futur', label: 'Futur simple', offered: true, defaultOn: false },
+  { key: 'conditionnel_present', label: 'Conditionnel', offered: true, defaultOn: false },
+  { key: 'plus_que_parfait', label: 'Plus-que-parfait', offered: true, defaultOn: false },
+  { key: 'subjonctif_present', label: 'Subjonctif', offered: false, defaultOn: false },
 ];
 
 const french: ConjugationLanguageConfig = {
