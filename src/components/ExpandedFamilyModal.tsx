@@ -6,6 +6,7 @@ import { DeleteIcon } from './icons/DeleteIcon';
 import { highlightWord } from '../utils/highlightWord';
 import { GENDER_LABELS, GENDER_LANGUAGES } from '../utils/parseGender';
 import { isGenderEligible } from '../lib/genderApi';
+import { isConjugatable } from '../utils/conjugationForms';
 
 /**
  * A resolved gender is its own proof the word is a noun (genderApi.ts only
@@ -33,6 +34,7 @@ interface ExpandedFamilyModalProps {
   onOpenFamilySelector: (wordId: number) => void;
   onEditWord: (word: VocabWord) => void;
   onDeleteWord: (wordId: number) => void;
+  onConjugate: (word: VocabWord) => void;
 }
 
 export function ExpandedFamilyModal({
@@ -44,6 +46,7 @@ export function ExpandedFamilyModal({
   onOpenFamilySelector,
   onEditWord,
   onDeleteWord,
+  onConjugate,
 }: ExpandedFamilyModalProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [confirmingDeleteWordId, setConfirmingDeleteWordId] = useState<number | null>(null);
@@ -198,6 +201,16 @@ export function ExpandedFamilyModal({
                         >
                           {genderLabel}
                         </span>
+                      )}
+                      {/* Words that HAVE conjugations, not merely part_of_speech 'verb' -- see isConjugatable. */}
+                      {isConjugatable(word) && (
+                        <button
+                          type="button"
+                          className="conjugate-pill"
+                          onClick={() => onConjugate(word)}
+                        >
+                          Conjugate
+                        </button>
                       )}
                     </div>
                     <div className="word-translation">{word.translation?.text}</div>

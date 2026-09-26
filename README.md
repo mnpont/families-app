@@ -19,7 +19,7 @@ cp .env.example .env.local   # fill in your Supabase project URL + anon key
 npm run dev
 ```
 
-`npm run build` type-checks and produces a production build in `dist/`.
+`npm run build` type-checks and produces a production build in `dist/`. `npm test` runs the Vitest suite.
 
 ## Data model
 
@@ -32,3 +32,4 @@ This started as a single static `index.html` file and was restructured into the 
 - `docs/audit.md` — audit of the original codebase that motivated the redesign
 - `docs/learning-science.md` — spaced-repetition research behind the review feature
 - `docs/v2-plan.md` — the resulting data model and feature plan
+- `docs/practice-hub-spec.md` — the Practice hub and Conjugation Drill (conjugation data, grading, how to add exercises/tenses/languages)

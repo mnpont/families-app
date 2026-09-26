@@ -1,0 +1,43 @@
+-- Caches a verb's full conjugation table on the Word row, for the Practice
+-- hub's Conjugation Drill and the word list's Conjugate modal (see
+-- docs/practice-hub-spec.md). Generated once per word by the
+-- generate-conjugations Edge Function -- from the rule-based french-verbs
+-- library over the Lefff dictionary, not an LLM -- right after a word is
+-- added or edited, and backfilled by scripts/backfillConjugations.ts.
+-- Null means "not a verb we can conjugate" (or not generated yet).
+--
+-- Shape (version 1; TypeScript: src/types/conjugations.ts, generator:
+-- supabase/functions/_shared/conjugationCore.ts):
+--
+--   {
+--     "version": 1,
+--     "source": "lefff",               -- or "llm", reserved for a fallback
+--     "infinitive": "lever",           -- without "se "/"s'"
+--     "pronominal": true,
+--     "hAspire": false,                -- blocks je -> j' before an h (haïr)
+--     "auxiliary": "etre",             -- "etre" | "avoir"
+--     "tenses": {
+--       "present": { "je": "me lève", "tu": "te lèves", ..., "elles": "se lèvent" },
+--       "passe_compose": {
+--         "je": ["me suis levé", "me suis levée"],
+--         "elle": "s'est levée",
+--         "vous": ["vous êtes levé", "vous êtes levée", "vous êtes levés", "vous êtes levées"],
+--         ...
+--       },
+--       ...                            -- every personal tense the library supports
+--     }
+--   }
+--
+-- Persons are je, tu, il, elle, nous, vous, ils, elles (imperatif_present:
+-- tu, nous, vous only). A person holds one string or an array of accepted
+-- variants, the first canonical; a person the verb lacks is absent
+-- (impersonal "falloir" only has il/elle). Forms are everything typed
+-- after the subject pronoun, so pronominal forms include the reflexive.
+-- "je" vs "j'" isn't stored: readers derive it from the form's first
+-- letter (vowel, or h unless hAspire).
+--
+-- Every supported tense is stored, not just the ones the drill offers
+-- today, so enabling another tense (src/constants/conjugation.ts) never
+-- needs a regeneration.
+
+alter table words add column if not exists conjugations jsonb;

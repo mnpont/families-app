@@ -1,47 +1,83 @@
-import { useEffect, useRef, useState } from 'react';
-import { usePracticeSession } from '../hooks/usePracticeSession';
-import type { Grade, LanguageId } from '../types/models';
-import { GradeButtons } from './GradeButtons';
-import { MultipleChoiceCard } from './MultipleChoiceCard';
+import { useState } from 'react';
+import { flushSync } from 'react-dom';
+import { conjugationConfigFor, DRILL_SESSION_SIZE, offeredTenses } from '../constants/conjugation';
+import type { ExerciseId } from '../constants/exercises';
+import { useConjugationPool } from '../hooks/useConjugationPool';
+import { useDueCount } from '../hooks/useDueCount';
+import type { LanguageId } from '../types/models';
+import { countCombinations } from '../utils/buildConjugationQueue';
+import { ConjugationDrillView } from './ConjugationDrillView';
+import { ConjugationSetupSheet } from './ConjugationSetupSheet';
+import { MultipleChoiceView } from './MultipleChoiceView';
+import { PracticeHub } from './PracticeHub';
 
 interface PracticeViewProps {
   languageId: LanguageId | null;
+  onGoToFamilies: () => void;
 }
 
-export function PracticeView({ languageId }: PracticeViewProps) {
-  const { questions, loading, submitGrade } = usePracticeSession(languageId);
-  const [selected, setSelected] = useState<string | null>(null);
+/**
+ * Which Practice screen is showing -- sub-state inside the tab, no router:
+ *
+ *   hub -> conjugationSetup (sheet over the hub) -> conjugationDrill -> hub
+ *   hub -> multipleChoice
+ *
+ * App remounts this component (a new key) when the language changes or the
+ * Practice nav button is tapped while already on Practice, which is what
+ * returns to the hub from inside any exercise.
+ */
+type PracticeMode = 'hub' | 'multipleChoice' | 'conjugationSetup' | 'conjugationDrill';
 
-  // Progress is "how many of this session's original batch have been graded
-  // so far" -- total is captured once per language, not recomputed as the
-  // live queue shrinks (docs/practice-mc-spec.md "State Management").
-  const [sessionTotal, setSessionTotal] = useState(0);
-  const [answeredCount, setAnsweredCount] = useState(0);
-  const initializedRef = useRef(false);
+export function PracticeView({ languageId, onGoToFamilies }: PracticeViewProps) {
+  const [mode, setMode] = useState<PracticeMode>('hub');
+  const config = conjugationConfigFor(languageId);
+  const tenses = config ? offeredTenses(config) : [];
+  // Per visit, never persisted: the defaultOn tenses start on.
+  const [selectedTenses, setSelectedTenses] = useState(() =>
+    tenses.filter((t) => t.defaultOn).map((t) => t.key),
+  );
+  const [sessionKey, setSessionKey] = useState(0);
 
-  // Reset during render rather than in an effect, so a language switch clears
-  // stale progress/selection in the same pass instead of flashing it for a frame.
-  // (initializedRef is a ref, not state -- mutating it must stay in an effect,
-  // below, since refs can't be written during render.)
-  const [syncedLanguageId, setSyncedLanguageId] = useState(languageId);
-  if (languageId !== syncedLanguageId) {
-    setSyncedLanguageId(languageId);
-    setAnsweredCount(0);
-    setSelected(null);
+  const { verbs, loading: verbsLoading } = useConjugationPool(languageId);
+  const dueCount = useDueCount(languageId);
+
+  const persons = config?.persons.map((p) => p.key) ?? [];
+  const questionCount = Math.min(
+    DRILL_SESSION_SIZE,
+    countCombinations(verbs, selectedTenses, persons),
+  );
+
+  const toHub = () => setMode('hub');
+
+  const onSelect = (id: ExerciseId) => {
+    if (id === 'multipleChoice') setMode('multipleChoice');
+    if (id === 'conjugationDrill') setMode('conjugationSetup');
+  };
+
+  // flushSync: the drill focuses its input while mounting, and iOS only
+  // opens the keyboard for a focus() inside this same tap (see
+  // ConjugationDrillView).
+  const startDrill = () => flushSync(() => setMode('conjugationDrill'));
+  const practiceAgain = () => flushSync(() => setSessionKey((k) => k + 1));
+
+  if (mode === 'multipleChoice') {
+    return <MultipleChoiceView languageId={languageId} />;
   }
 
-  useEffect(() => {
-    initializedRef.current = false;
-  }, [languageId]);
+  if (mode === 'conjugationDrill' && config) {
+    return (
+      <ConjugationDrillView
+        key={sessionKey}
+        config={config}
+        verbs={verbs}
+        tenses={tenses.filter((t) => selectedTenses.includes(t.key))}
+        onExit={toHub}
+        onPracticeAgain={practiceAgain}
+      />
+    );
+  }
 
-  useEffect(() => {
-    if (!loading && !initializedRef.current) {
-      setSessionTotal(questions.length);
-      initializedRef.current = true;
-    }
-  }, [loading, questions.length]);
-
-  if (loading) {
+  if (mode === 'conjugationSetup' && verbsLoading) {
     return (
       <div className="empty-state">
         <div className="empty-state-title">Loading...</div>
@@ -49,77 +85,50 @@ export function PracticeView({ languageId }: PracticeViewProps) {
     );
   }
 
-  if (questions.length === 0) {
+  if (mode === 'conjugationSetup' && verbs.length === 0) {
     return (
-      <div className="empty-state">
-        <div className="empty-state-title">All Caught Up</div>
-        <div className="empty-state-text">Nothing to practice right now</div>
+      <div className="practice-screen">
+        <div className="practice-back-row">
+          <button type="button" className="word-search-back" onClick={toHub}>
+            ‹ Practice
+          </button>
+        </div>
+        <div className="empty-state">
+          <div className="empty-state-title">No verbs yet</div>
+          <div className="empty-state-text">
+            Add verbs in Families and they&apos;ll show up here automatically.
+          </div>
+          <button
+            type="button"
+            className="word-search-add-button practice-empty-action"
+            onClick={onGoToFamilies}
+          >
+            Go to Families
+          </button>
+        </div>
       </div>
     );
   }
 
-  const current = questions[0];
-  // A card whose write failed goes back in the queue (useReviewSession) and is
-  // answered again, so the raw count can pass the batch size -- never show
-  // "5/4".
-  const graded = Math.min(answeredCount, sessionTotal);
-
-  /**
-   * Advancing is deliberately instant and un-animated: grading removes the
-   * card from the queue optimistically (see useReviewSession), so the next
-   * question renders complete -- prompt, options and grading row together --
-   * in the very next frame, never waiting on the write and never showing a
-   * partially-painted or empty card in between. Earlier versions slid the
-   * card out, hid it for the length of the network round-trip and slid the
-   * next one in, which is what read as the question "jumping around" and
-   * arriving in pieces.
-   *
-   * submitGrade is intentionally not awaited; it reports its own failures
-   * and puts the card back in the queue if the write doesn't land.
-   */
-  const handleGrade = (grade: Grade) => {
-    if (!selected) return;
-    setSelected(null);
-    setAnsweredCount((n) => n + 1);
-    void submitGrade(current.card.id, grade);
-  };
-
   return (
-    <div className="practice-container">
-      <div className="practice-progress">
-        <div className="practice-progress-track">
-          <div
-            className="practice-progress-fill"
-            style={{ width: sessionTotal > 0 ? `${(graded / sessionTotal) * 100}%` : '0%' }}
-          />
-        </div>
-        <div className="practice-progress-label">
-          {graded}/{sessionTotal}
-        </div>
-      </div>
-
-      {/*
-        Keyed by card id so every question is a fresh subtree. A newly mounted
-        element doesn't run CSS transitions, so the grading row mounts already
-        hidden (--pending) instead of fading its previous answered state out
-        over the new question -- the stale Again/Hard/Good/Easy row that used
-        to flash on top of the next word.
-      */}
-      <div key={current.card.id} className="practice-question">
-        <MultipleChoiceCard
-          prompt={current.card.text}
-          options={current.options}
-          correctAnswer={current.correctAnswer}
-          selected={selected}
-          onSelect={(option) => !selected && setSelected(option)}
+    <>
+      <PracticeHub
+        languageId={languageId}
+        dueCount={dueCount}
+        verbCount={config && !verbsLoading ? verbs.length : null}
+        onSelect={onSelect}
+      />
+      {mode === 'conjugationSetup' && (
+        <ConjugationSetupSheet
+          tenses={tenses}
+          selected={selectedTenses}
+          onChange={setSelectedTenses}
+          verbCount={verbs.length}
+          questionCount={questionCount}
+          onStart={startDrill}
+          onClose={toHub}
         />
-
-        <div
-          className={`flashcard-nav practice-grade-row ${!selected ? 'flashcard-nav--pending' : ''}`}
-        >
-          <GradeButtons onGrade={handleGrade} disabled={!selected} />
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

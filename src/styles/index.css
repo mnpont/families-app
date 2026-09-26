@@ -1628,3 +1628,884 @@ body::after {
   gap: 7px;
   margin-top: 14px;
 }
+
+/* Practice hub + Conjugation Drill -- docs/practice-hub-spec.md. New
+   screens use .content's own 20px side padding (a 350px column on a 390px
+   phone), not .practice-container's extra 20px, centered on desktop like
+   .practice-question. */
+
+.practice-screen {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* Hub (1a/1b) */
+
+.exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.exercise-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 78px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  font-family: 'Inter', sans-serif;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.exercise-menu-button:not(.exercise-menu-button--disabled):hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 154, 158, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.exercise-menu-button--disabled {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(0, 0, 0, 0.05);
+  box-shadow: none;
+  cursor: default;
+}
+
+.exercise-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 154, 158, 0.12);
+  color: #e8677d;
+}
+
+.exercise-menu-button--disabled .exercise-icon {
+  background: rgba(0, 0, 0, 0.04);
+  color: #bbb;
+}
+
+.exercise-icon-text {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.exercise-icon-gap {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.exercise-icon-bar {
+  width: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.exercise-icon-blank {
+  width: 12px;
+  height: 10px;
+  border: 1.5px dashed currentColor;
+  border-radius: 3px;
+}
+
+.exercise-icon-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.exercise-icon-chip-row {
+  display: flex;
+  gap: 3px;
+}
+
+.exercise-icon-chip {
+  height: 7px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+
+.exercise-icon-chip--small {
+  width: 9px;
+}
+
+.exercise-icon-chip--wide {
+  width: 13px;
+}
+
+.exercise-icon-chip--filled {
+  width: 16px;
+  background: currentColor;
+}
+
+.exercise-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.exercise-name {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #1a1a1a;
+}
+
+.exercise-description {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: #999;
+}
+
+.exercise-menu-button--disabled .exercise-name {
+  color: #999;
+}
+
+.exercise-menu-button--disabled .exercise-description {
+  color: #aaa;
+}
+
+.exercise-tag {
+  margin-top: 9px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.05);
+  color: #999;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.exercise-tag--language {
+  background: rgba(142, 158, 255, 0.14);
+  color: #6b7ad1;
+}
+
+.exercise-side {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exercise-count {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.exercise-count--accent {
+  background: rgba(255, 154, 158, 0.14);
+  color: #e8677d;
+}
+
+.exercise-count--muted {
+  background: rgba(0, 0, 0, 0.04);
+  color: #999;
+}
+
+.exercise-chevron {
+  font-size: 18px;
+  color: #bbb;
+}
+
+/* Setup sheet (2a/2b) */
+
+.overlay--sheet {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.practice-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  padding: 12px 26px calc(46px + env(safe-area-inset-bottom));
+  border-radius: 24px 24px 0 0;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: none;
+  box-shadow: 0 -12px 60px rgba(0, 0, 0, 0.15);
+  animation: practice-sheet-up 0.25s ease-out;
+  transition: transform 0.2s ease-out;
+}
+
+@keyframes practice-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.practice-sheet-handle {
+  width: 36px;
+  height: 5px;
+  margin: 0 auto 16px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.practice-sheet .expanded-family-close {
+  top: 22px;
+}
+
+.practice-sheet-title {
+  margin-bottom: 6px;
+}
+
+.practice-sheet-text {
+  margin-bottom: 24px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #666;
+}
+
+.practice-sheet-label {
+  margin-bottom: 10px;
+}
+
+.tense-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tense-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 22px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.tense-chip svg {
+  width: 14px;
+  height: 14px;
+}
+
+.tense-chip--on {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(255, 154, 158, 0.3);
+}
+
+.tense-chip--off {
+  background: rgba(0, 0, 0, 0.04);
+  color: #666;
+}
+
+.tense-chip--locked {
+  box-shadow:
+    0 0 0 3px rgba(255, 154, 158, 0.25),
+    0 2px 8px rgba(255, 154, 158, 0.3);
+  animation: tense-chip-pulse 0.45s ease-out;
+}
+
+@keyframes tense-chip-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.practice-sheet-hint {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #999;
+}
+
+.practice-sheet-info {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #999;
+}
+
+.practice-sheet-start {
+  width: 100%;
+  margin-top: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(255, 154, 158, 0.4);
+}
+
+/* Question + feedback (3a-4c) */
+
+.practice-close-button {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.practice-close-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.practice-close-button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.conj-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 128px;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.conj-tense-pill {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(142, 158, 255, 0.14);
+  color: #6b7ad1;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.conj-prompt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+}
+
+.conj-prompt-pronoun {
+  font-size: 22px;
+  font-weight: 500;
+  color: #666;
+}
+
+.conj-prompt-infinitive {
+  font-family: 'Playfair Display', serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #1a1a1a;
+}
+
+.conj-prompt-meaning {
+  font-size: 13px;
+  color: #999;
+}
+
+.conj-answer-row {
+  display: flex;
+  gap: 8px;
+}
+
+.conj-answer-input {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 16px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.conj-answer-input--idle:focus-within {
+  border-color: #ff9a9e;
+  box-shadow: 0 0 0 3px rgba(255, 154, 158, 0.1);
+}
+
+.conj-answer-prefix {
+  flex: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: #999;
+}
+
+.conj-answer-input input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #1a1a1a;
+  caret-color: #ff9a9e;
+}
+
+.conj-answer-input input::placeholder {
+  color: #aaa;
+}
+
+.conj-answer-input--correct,
+.conj-answer-input--almost,
+.conj-answer-input--wrong {
+  border-width: 2px;
+}
+
+.conj-answer-input--correct {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: #10b981;
+}
+
+.conj-answer-input--almost {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: #f59e0b;
+}
+
+.conj-answer-input--wrong {
+  background: rgba(225, 75, 75, 0.1);
+  border-color: #e14b4b;
+}
+
+.conj-answer-input--correct input,
+.conj-answer-input--correct .conj-answer-prefix {
+  color: #0d7a5f;
+}
+
+.conj-answer-input--almost input,
+.conj-answer-input--almost .conj-answer-prefix {
+  color: #b45309;
+}
+
+.conj-answer-input--wrong input,
+.conj-answer-input--wrong .conj-answer-prefix {
+  color: #c23b3b;
+}
+
+.conj-answer-input:not(.conj-answer-input--idle) input {
+  font-weight: 600;
+}
+
+.conj-answer-input:not(.conj-answer-input--idle) .conj-answer-prefix {
+  opacity: 0.6;
+}
+
+.conj-answer-input--wrong input {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.conj-answer-icon {
+  flex: none;
+  display: flex;
+}
+
+.conj-answer-icon--correct {
+  width: 20px;
+  height: 20px;
+  color: #10b981;
+}
+
+.conj-answer-icon--wrong {
+  width: 18px;
+  height: 18px;
+  color: #e14b4b;
+}
+
+.conj-answer-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.conj-check-button {
+  flex: none;
+  height: 52px;
+  padding: 0 20px;
+}
+
+.conj-feedback-correct {
+  margin-top: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0d7a5f;
+}
+
+.feedback-card {
+  margin-top: 12px;
+}
+
+.feedback-card--almost {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.feedback-card--wrong {
+  padding: 16px 16px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.feedback-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+.feedback-card-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #999;
+}
+
+.feedback-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.feedback-card--wrong .feedback-form-row {
+  margin-top: 6px;
+}
+
+.feedback-form-pronoun {
+  font-size: 17px;
+  font-weight: 500;
+  color: #999;
+}
+
+.feedback-form {
+  font-size: 26px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.feedback-card--wrong .feedback-form {
+  font-size: 24px;
+}
+
+.feedback-mark {
+  padding: 0 2px;
+  border-radius: 4px;
+}
+
+.feedback-mark--almost {
+  background: rgba(245, 158, 11, 0.28);
+  color: #92400e;
+}
+
+.feedback-mark--wrong {
+  background: rgba(16, 185, 129, 0.16);
+  color: #0d7a5f;
+}
+
+.feedback-typed {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #999;
+}
+
+.feedback-typed strong {
+  font-weight: 600;
+  color: #666;
+}
+
+.feedback-divider {
+  height: 1px;
+  margin: 12px 0 8px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.conj-note {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #888;
+}
+
+.conj-note strong {
+  font-weight: 700;
+  color: #666;
+}
+
+/* Conjugation table (4c, 7b) */
+
+.conj-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 6px;
+}
+
+.conj-table-cell {
+  padding: 5px 10px;
+  border-radius: 9px;
+}
+
+.conj-table-pronoun {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+}
+
+.conj-table-form {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.conj-table-cell--highlight {
+  background: rgba(255, 154, 158, 0.14);
+}
+
+.conj-table-cell--highlight .conj-table-pronoun {
+  font-weight: 700;
+  color: #e8677d;
+}
+
+/* End of session (5) */
+
+.session-summary-top {
+  padding-top: 22px;
+  text-align: center;
+}
+
+.session-summary-kicker {
+  font-size: 13px;
+  font-weight: 600;
+  color: #999;
+}
+
+.session-summary-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+}
+
+.session-summary-score-value {
+  font-size: 64px;
+  color: #1a1a1a;
+}
+
+.session-summary-score-total {
+  font-size: 30px;
+  color: #bbb;
+}
+
+.session-summary-caption {
+  font-size: 15px;
+  color: #666;
+}
+
+.session-summary-pills {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.session-summary-pill {
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.session-summary-pill--almost {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+
+.session-summary-pill--missed {
+  background: rgba(225, 75, 75, 0.1);
+  color: #c23b3b;
+}
+
+.session-summary-heading {
+  margin: 30px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.summary-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 154, 158, 0.08);
+  border: 1px solid rgba(255, 154, 158, 0.1);
+}
+
+.summary-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.summary-dot--wrong {
+  background: #e14b4b;
+}
+
+.summary-dot--almost {
+  background: #f59e0b;
+}
+
+.summary-meta {
+  font-size: 12px;
+  color: #999;
+}
+
+.summary-answer {
+  margin-top: 2px;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.summary-arrow {
+  font-weight: 500;
+  color: #bbb;
+}
+
+.session-summary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+/* Empty (6a) */
+
+.practice-back-row {
+  display: flex;
+  margin-left: -10px;
+}
+
+.practice-empty-action {
+  margin-top: 24px;
+}
+
+/* Conjugate pill (7a) + conjugation modal (7b) */
+
+.conjugate-pill {
+  position: relative;
+  margin-left: auto;
+  padding: 6px 11px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(142, 158, 255, 0.15);
+  color: #6b7ad1;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Pads the ~25px pill's hit area to 44px without changing its look. */
+.conjugate-pill::after {
+  content: '';
+  position: absolute;
+  inset: -10px -4px;
+}
+
+/* Stacks over ExpandedFamilyModal's own .overlay. */
+.conj-modal-overlay {
+  z-index: 110;
+}
+
+.conj-modal-scroll {
+  padding: 26px 22px 22px;
+}
+
+/* Verb + meaning on one baseline; the meaning wraps under the verb when it
+   doesn't fit. The right padding keeps both clear of the absolute ✕, which
+   .expanded-family-title's own padding does when it stands alone. */
+.conj-modal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  row-gap: 2px;
+  margin-bottom: 18px;
+  padding-right: 34px;
+}
+
+.conj-modal-head .expanded-family-title {
+  margin-bottom: 0;
+  padding-right: 0;
+}
+
+.conj-modal-meaning {
+  font-size: 15px;
+  color: #aaa;
+}
+
+.conj-modal-section .conj-tense-pill {
+  margin-bottom: 8px;
+}
+
+.conj-modal-divider {
+  height: 1px;
+  margin: 14px 4px;
+  background: rgba(0, 0, 0, 0.06);
+}
