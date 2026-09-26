@@ -2477,6 +2477,29 @@ body::after {
   padding: 26px 22px 22px;
 }
 
+/* Verb + meaning on one baseline; the meaning wraps under the verb when it
+   doesn't fit. The right padding keeps both clear of the absolute ✕, which
+   .expanded-family-title's own padding does when it stands alone. */
+.conj-modal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  row-gap: 2px;
+  margin-bottom: 18px;
+  padding-right: 34px;
+}
+
+.conj-modal-head .expanded-family-title {
+  margin-bottom: 0;
+  padding-right: 0;
+}
+
+.conj-modal-meaning {
+  font-size: 15px;
+  color: #aaa;
+}
+
 .conj-modal-section .conj-tense-pill {
   margin-bottom: 8px;
 }

@@ -54,12 +54,13 @@ export function ConjugationModal({ word, onClose }: ConjugationModalProps) {
         </button>
 
         <div className="expanded-family-scroll conj-modal-scroll" ref={scrollRef}>
-          <div className="expanded-family-title">{config.displayInfinitive(word.conjugations)}</div>
-          {word.translation && (
-            <div className="expanded-family-meta">
-              <div className="expanded-family-count-pill">{word.translation.text}</div>
+          {/* The meaning sits beside the verb on its baseline, wrapping under it when too long. */}
+          <div className="conj-modal-head">
+            <div className="expanded-family-title">
+              {config.displayInfinitive(word.conjugations)}
             </div>
-          )}
+            {word.translation && <div className="conj-modal-meaning">{word.translation.text}</div>}
+          </div>
 
           {tenses.map((tense, i) => (
             <Fragment key={tense.key}>
